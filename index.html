@@ -621,7 +621,7 @@ and open the template in the editor.
                 document.getElementById('playground-canvas').appendChild(renderer.domElement);
                 camera.position.set(0, 0, 10);
                 starsGeometry = new THREE.Geometry();
-                cubesGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+                cubesGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
 
             }
 
@@ -673,7 +673,7 @@ and open the template in the editor.
                 paused = true;
                 clearScene();
                 starsGeometry = new THREE.Geometry();
-                cubesGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+                cubesGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
                 stars = [];
                 setDescription(profile);
                 initPoints(pointsPerSide, opt, profile, threeDModel);
