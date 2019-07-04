@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>t-SNE</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link href="material-icons.css" rel="stylesheet">
+        <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+        <script src="js/tsne.js"></script>
+        <script src="js/three.js"></script>
+        <script src="js/orbit.js"></script>
+        <script src="js/d3.min.js"></script>
+
+    </head>
+    <body>
+	  <h1 class="l-middle">t-Distributed Stochastic Neighbor Embedding (t-SNE)</h1>
+
+        <div class="l-page">
+            <style>
+                #playground {
+                    overflow: hidden;
+                    font-family: 'Open Sans', sans-serif;
+                    padding: 36px 0 0 0;
+                    z-index: 1000;
+					height: 700px
+                }
+
+                #playground * {
+                    box-sizing: border-box;
+                }
+
+                #playground.modal {
+                    position: fixed;
+                    left: 10px;
+                    right: 10px;
+                    top: 50px;
+                }
+
+                /* Playground Canvas */
+                #playground-canvas {
+                    float: left;
+                }
+
+                #playground-canvas canvas {
+                    width: 100%;
+                }
+
+                /* Data Menu */
+                #data-menu {
+                    /*float: left;*/
+                    /*width: 25%*/
+                    width: 40%;
+                    float: left;
+                    margin-bottom: 24px;
+                    overflow: hidden;
+                    margin-left: 5%;
+                }
+                #data-menu .demo-data {
+                    cursor: pointer;
+                    position: relative;
+                    font-size: 10px;
+                    line-height: 1.2em;
+                    box-sizing: border-box;
+                    float: left;
+                    margin: 2px;
+                    padding: 4px;
+                    width: calc(33% - 4px);
+                    background: white;
+                    border: 1px solid rgba(0, 0, 0, 0.1);
+                    border-radius: 4px;
+                    box-shadow: 0 0 3px rgba(0, 0, 0, 0.08);
+                }
+                @media(min-width: 480px) {
+                    #data-menu .demo-data {
+                        width: calc(25% - 8px);
+                        padding: 8px;
+                        margin: 4px;
+                    }
+                }
+                @media(min-width: 768px) {
+                    #data-menu .demo-data {
+                        width: calc(16.5% - 8px);
+                        padding: 8px;
+                        margin: 4px;
+                    }
+                }
+                #data-menu .demo-data:hover {
+                    border: 1px solid rgba(0, 0, 0, 0.2);
+
+                }
+                #data-menu .demo-data.selected::after {
+                    content: "";
+                    border: 2px solid rgba(70, 130, 180, 0.8);
+                    width: 100%;
+                    height: 100%;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    box-sizing: border-box;
+                    border-radius: 4px;
+                }
+                #data-menu .demo-data span {
+                    display: none;
+                }
+                #data-menu .demo-data:hover canvas {
+                    opacity: 1;
+                }
+                #data-menu .demo-data canvas {
+                    width: 100%;
+                    opacity: 0.3;
+                }
+                #data-menu .demo-data.selected canvas {
+                    opacity: 1;
+                }
+
+                /* Data Details */
+                #data-details {
+                    position: relative;
+                }
+
+                @media(min-width: 768px) {
+                    #data-details {
+                        width: 40%;
+                        float: right;
+                    }
+                }
+
+                #data-details #data-controls {
+                    width: 40%;
+                    float: right;
+                    position: relative;
+                    overflow: hidden;
+                    font-size: 13px;
+                }
+
+                @media(min-width: 768px) {
+                    #data-details #data-controls {
+                        width: 50%;
+                        margin-right: 10%;
+                        float: left;
+                    }
+                }
+
+                #data-details #play-controls {
+                    margin-bottom: 18px;
+                    overflow: hidden;
+                    position: relative;
+                }
+                #data-details #play-controls button {
+                    cursor: pointer;
+                    outline: none;
+                    border-radius: 50%;
+                    background: steelblue;
+                    color: white;
+                    width: 25%;
+                    margin-right: 5%;
+                    padding-top: 25%;
+                    padding-bottom: 0;
+                    border: none;
+                    float: left;
+                    position: relative;
+                }
+                #play-controls i {
+                    display: block;
+                    position: absolute;
+                    top: 50%;
+                    left: 0;
+                    width: 100%;
+                    height: 36px;
+                    font-size: 24px;
+                    line-height: 0;
+                }
+                @media(min-width: 768px) {
+                    #play-controls i {
+                        font-size: 30px;
+                    }
+                }
+                #play-controls #play-pause i {
+                    display: none;
+                    position: absolute;
+                }
+                #play-controls #play-pause.paused i:nth-child(1) {
+                    display: block;
+                }
+                #play-controls #play-pause.playing i:nth-child(2) {
+                    display: block;
+                }
+
+                #steps-display {
+                    float: left;
+                    text-align: center;
+                    width: 25%;
+                    line-height: 1.5em;
+                    font-size: 13px;
+                }
+
+                @media(min-width: 1024px) {
+                    #steps-display {
+                        font-size: 16px;
+                        line-height: 1.6em;
+                    }
+                }
+                #data-details #data-description {
+                    width: 50%;
+                    margin-right: 10%;
+                    float: right;
+                    font-size: 14px;
+                    line-height: 1.6em;
+                }
+
+                @media(min-width: 768px) {
+                    #data-details #data-description {
+                        width: 40%;
+                        float: left;
+                        margin-right: 0;
+                    }
+                }
+
+                /* Options */
+                #data-details #options {
+                    float: left;
+                    padding-left: 36px;
+                    font-size: 13px;
+                    line-height: 1.5em;
+                    width: 45%;
+                }
+                #data-details input {
+                    display: block;
+                    width: 100%;
+                    margin: 8px 0 16px 0;
+                }
+
+                #options #data-options {
+                    width: 45%;
+                    margin-left: 4px;
+                }
+                #options #tsne-options {
+                    width: 45%;
+                    margin-left: 4px;
+                }
+
+                #data-details #share {
+                    margin-top: 8px;
+                    display: block;
+                    color: rgba(0, 0, 0, 0.4);
+                    text-decoration: none;
+                    font-size: 12px;
+                }
+
+                #data-details #share:hover {
+                    text-decoration: underline;
+                }
+
+                #data-details #share i {
+                    line-height: 0px;
+                    position: relative;
+                    top: 7px;
+                }
+
+            </style>
+            <div id="playground">
+
+                <div id="playground-canvas" style="width: 52%; border: solid #eee;">
+
+                </div>
+
+                <div id="data-menu">
+                    <div class="demo-data selected" data-type="square">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Square Grid</span>
+                    </div>
+                    <div class="demo-data" data-type="trefoil">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Trefoil</span>
+                    </div>
+                    <div class="demo-data" data-type="link">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Link</span>
+                    </div>
+                    <div class="demo-data" data-type="unlink">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Unlink</span>
+                    </div>
+                    <div class="demo-data" data-type="subsetClusters">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Subset Clusters</span>
+                    </div>
+                    <div class="demo-data" data-type="threeClusters">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Three Clusters</span>
+                    </div>
+                    <div class="demo-data" data-type="twoClusters">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Two Clusters</span>
+                    </div>
+                </div>
+
+                <div id="data-details">
+                    <div id="data-controls">
+                        <div id="play-controls">
+                            <button id="play-pause" class="playing" onclick="playPause()"><i class="material-icons">play_arrow</i><i class="material-icons">pause</i></button>
+                            <button id="restart" onclick="reset()"><i class="material-icons">refresh</i></button>
+                            <div id="steps-display">
+                                Step<br><span id="step">5,000</span>
+                            </div>
+                        </div>
+                        <div id="data-options">
+                            <span class="slider-label-Points Per Side">Points Per Side </span>
+                            <span class="slider-value-Points Per Side">8</span>
+                            <input type="range" min="4" max="100" value="8" id="pointsPerSide" onchange="onParamsChange()">
+
+                            <span class="slider-label-Points Per Side">Steps </span>
+                            <span class="steps-value-Points Per Side">200</span>
+                            <input type="range" min="200" max="5000" value="1000" id="steps" onchange="onParamsChange()">
+                        </div>
+                        <div id="tsne-options">
+                            <span class="slider-label-Perplexity">Perplexity </span>
+                            <span class="slider-value-Perplexity">30</span><input type="range" min="2" max="50" value="30" id="perplexity" onchange="onParamsChange()">
+                            <span class="slider-label-Epsilon">Epsilon </span><span class="slider-value-Epsilon">5</span>
+                            <input type="range" min="1" max="20" value="5" id="epsilon" onchange="onParamsChange()"></div>
+                        <span class="slider-label-Epsilon">3D Model</span>
+                        <input type="checkbox" id="3dModel" onchange="onParamsChange()" checked style="width: 5%; display: inline-block">
+                    </div>
+                    <div>
+                        <p id="description">Quick Description</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+		<p>A popular method for exploring high-dimensional data is something called t-SNE, introduced by <dt-cite key="maaten2008visualizing"><span id="citation-0" data-hover-ref="dt-cite-hover-box-0">van der Maaten and Hinton in 2008 <span class="citation-number">[1]</span></span></dt-cite>. The technique has become widespread in the field of machine learning, since it has an almost magical ability to create compelling two-dimensonal "maps" from data with hundreds or even thousands of dimensions.
+	Although impressive, these images can be tempting to misread.</p>
+
+	  <p>The goal is to take a set of points in a high-dimensional space and find a faithful representation of those points in a lower-dimensional space, typically the 2D plane. The algorithm is non-linear and adapts to the underlying data, performing different transformations on different regions. Those differences can be a major source of confusion.</p>
+
+	  <p>A second feature of t-SNE is a tuneable parameter, "perplexity," which says (loosely) how to balance attention between local and global aspects of your data. The parameter is, in a sense, a guess about the number of close neighbors each point has. The perplexity value has a complex effect on the resulting pictures. The original paper says, <em>"The performance of SNE is fairly robust to changes in the perplexity, and typical values are between 5 and 50."</em> But the story is more nuanced than that. Getting the most from t-SNE may mean analyzing multiple plots with different perplexities.</p>
+
+	  <p>That's not the end of the complications. The t-SNE algorithm doesn't always produce similar output on successive runs, for example, and there are additional hyperparameters related to the optimization process.</p>
+
+	  <hr>
+
+        <script>
+            // Euclidean distance.
+            function dist(a, b) {
+                var d = 0;
+                for (var i = 0; i < a.length; i++) {
+                    d += (a[i] - b[i]) * (a[i] - b[i]);
+                }
+                return Math.sqrt(d);
+            }
+
+            // Creates distance matrix for t-SNE input.
+            function distanceMatrix(points) {
+                var matrix = [];
+                var n = points.length;
+                for (var i = 0; i < n; i++) {
+                    for (var j = 0; j < n; j++) {
+                        matrix.push(dist(points[i].coords,
+                                points[j].coords));
+                    }
+                }
+                return matrix;
+            }
+            // Gaussian generator, mean = 0, std = 1.
+            var normal = d3.randomNormal();
+            // Create random Gaussian vector.
+            function normalVector(dim) {
+                var p = [];
+                for (var j = 0; j < dim; j++) {
+                    p[j] = normal();
+                }
+                return p;
+            }
+            // Scale the given vector.
+            function scale(vector, a) {
+                for (var i = 0; i < vector.length; i++) {
+                    vector[i] *= a;
+                }
+            }
+            var Point = function (coords, color) {
+                this.coords = coords;
+                this.color = color || '#039';
+            };
+
+            function makePoints(originals) {
+                var points = originals.map(function (p) {
+                    return new Point(p);
+                });
+                //addSpatialColors(points);
+                return points;
+            }
+
+            // Return a color for the given angle.
+            function angleColor(t) {
+                var hue = ~~(300 * t / (2 * Math.PI));
+                return 'hsl(' + hue + ',50%,50%)';
+            }
+            // Data in shape of 2D grid.
+            function gridData(size, threeModel, dim) {
+                var points = [];
+                for (var x = 0; x < size; x++) {
+                    for (var y = 0; y < size; y++) {
+                        if (threeModel) {
+                            for (var z = 0; z < size; z++) {
+                                points.push([x, y, z]);
+                            }
+                        } else {
+                            points.push([x, y, 0]);
+                        }
+                    }
+                }
+                return makePoints(points);
+            }
+            // Two clusters of the same size.
+            function twoClustersData(n, threeDModel, dim) {
+                dim = dim || 50;
+                var points = [];
+                for (var i = 0; i < n; i++) {
+                    points.push(new Point(normalVector(dim), '#039'));
+                    var v = normalVector(dim);
+                    v[0] += 10;
+                    points.push(new Point(v, '#f90'));
+                }
+                return points;
+            }
+
+            // Three clusters, at different distances from each other, in any dimension.
+            function threeClustersData(n, threeDModel, dim) {
+                dim = dim || 50;
+                var points = [];
+                for (var i = 0; i < n; i++) {
+                    var p1 = normalVector(dim);
+                    points.push(new Point(p1, '#039'));
+                    var p2 = normalVector(dim);
+                    p2[0] += 10;
+                    points.push(new Point(p2, '#f90'));
+                    var p3 = normalVector(dim);
+                    p3[0] += 30;
+                    points.push(new Point(p3, '#6a3'));
+                }
+                return points;
+            }
+            // One tiny cluster inside of a big cluster.
+            function subsetClustersData(n, threeDModel, dim) {
+                dim = dim || 50;
+                var points = [];
+                for (var i = 0; i < n; i++) {
+                    var p1 = normalVector(dim);
+                    points.push(new Point(p1, '#039'));
+                    var p2 = normalVector(dim);
+                    scale(p2, 20);
+                    points.push(new Point(p2, '#f90'));
+                }
+                return points;
+            }
+            // Points in two unlinked rings.
+            function unlinkData(n, threeDModel, dim) {
+                var points = [];
+                function rotate(x, y, z) {
+                    var u = x;
+                    var cos = Math.cos(.4);
+                    var sin = Math.sin(.4);
+                    var v = cos * y + sin * z;
+                    var w = -sin * y + cos * z;
+                    return [u, v, w];
+                }
+                for (var i = 0; i < n; i++) {
+                    var t = 2 * Math.PI * i / n;
+                    var sin = Math.sin(t);
+                    var cos = Math.cos(t);
+                    // Ring 1.
+                    points.push(new Point(rotate(cos, sin, 0), '#f90'));
+                    // Ring 2.
+                    points.push(new Point(rotate(3 + cos, 0, sin), '#039'));
+                }
+                return points;
+            }
+            // Points in linked rings.
+            function linkData(n, threeDModel, dim) {
+                var points = [];
+                function rotate(x, y, z) {
+                    var u = x;
+                    var cos = Math.cos(.4);
+                    var sin = Math.sin(.4);
+                    var v = cos * y + sin * z;
+                    var w = -sin * y + cos * z;
+                    return [u, v, w];
+                }
+                for (var i = 0; i < n; i++) {
+                    var t = 2 * Math.PI * i / n;
+                    var sin = Math.sin(t);
+                    var cos = Math.cos(t);
+                    // Ring 1.
+                    points.push(new Point(rotate(cos, sin, 0), '#f90'));
+                    // Ring 2.
+                    points.push(new Point(rotate(1 + cos, 0, sin), '#039'));
+                }
+                return points;
+            }
+            // Points in a trefoil knot.
+            function trefoilData(n, threeDModel, dim) {
+                var points = [];
+                for (var i = 0; i < n; i++) {
+                    var t = 2 * Math.PI * i / n;
+                    var x = Math.sin(t) + 2 * Math.sin(2 * t);
+                    var y = Math.cos(t) - 2 * Math.cos(2 * t);
+                    var z = -Math.sin(3 * t);
+                    points.push(new Point([x, y, z], angleColor(t)));
+                }
+                return points;
+            }
+            /*****************************************************************/
+            var profiles = {
+                square: {
+                    getPoints: gridData,
+                    description: 'A grid with equal spacing between points. Try convergence at different sample sizes.'
+                },
+                twoClusters: {
+                    getPoints: twoClustersData,
+                    description: 'Two clusters with equal numbers of points but with different distance from each other in high dimension.'
+                },
+                threeClusters: {
+                    getPoints: threeClustersData,
+                    description: 'Three clusters with equal numbers of points, but at different distances from each other.'
+                },
+                subsetClusters: {
+                    getPoints: subsetClustersData,
+                    description: 'A dense, tight cluster inside of a wide, sparse cluster. Perplexity makes a big difference here.'
+                },
+                unlink: {
+                    getPoints: unlinkData,
+                    description: 'Points arranged in 3D, on two unlinked circles.'
+                },
+                link: {
+                    getPoints: linkData,
+                    description: 'Points arranged in 3D, on two linked circles. Different runs may give different results.'
+                },
+                trefoil: {
+                    getPoints: trefoilData,
+                    description: 'Points arranged in 3D, following a trefoil knot. Different runs may give different results.'
+                }
+            }
+
+            var tsne;
+            var dists;
+            var stars = [];
+            var renderer;
+            var camera;
+            var controls;
+            var starsGeometry;
+            var cubesGeometry;
+            var count = 0;
+            var paused = false;
+            var steps = 200;
+            var nbPoints = 8;
+            var ratio = 1;
+            var threeD = true;
+            var profile = profiles['square'];
+            var opt = {
+                epsilon: 5, // epsilon is learning rate (10 = default)
+                perplexity: 30, // roughly how many neighbors each point influences (30 = default)
+                dim: 3 // dimensionality of the embedding (2 = default)
+            }
+
+            // Our Javascript will go here.
+            function initPoints(nbPoints, opt, profile, threeDModel) {
+
+                var points = profile.getPoints(nbPoints, threeDModel);
+                dists = distanceMatrix(points);
+                tsne = new tsnejs.tSNE(opt); // create a tSNE instance
+                tsne.initDataDist(dists);
+				if (threeDModel){
+					for (var i = 0; i < points.length; i++) {
+						var color = points[i].color;
+						var material = new THREE.MeshBasicMaterial({color:color});
+						var mesh = new THREE.Mesh( cubesGeometry, material );
+						mesh.position.x = points[i].coords[0] * ratio;
+						mesh.position.y = points[i].coords[1] * ratio;
+						mesh.position.z = points[i].coords[2] * ratio;
+						stars.push(mesh);
+						scene.add(mesh);
+					}
+				}else{
+					for (var i = 0; i < points.length; i++) {
+						var star = new THREE.Vector3();
+						star.x = points[i].coords[0] * ratio;
+						star.y = points[i].coords[1] * ratio;
+						star.z = 0;
+						starsGeometry.vertices.push(star);
+						var color = points[i].color;
+						var texture = new THREE.TextureLoader().load( 'textures/circle.png' );
+						var starsMaterial =  new THREE.PointsMaterial({
+										  size: 0.5,
+										  color: color,
+										  map: texture,
+										  transparent: true,
+										  depthWrite: false
+										});
+						var starField = new THREE.Points(starsGeometry, starsMaterial);
+						stars.push(starField);
+						scene.add(starField);
+					}
+				}
+
+
+            }
+
+            function initScene() {
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0XFFFFFF);
+                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
+                renderer = new THREE.WebGLRenderer();
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+                renderer.setClearColor(0xffffff, 0);
+                renderer.setSize(window.innerWidth / 2, 500);
+                document.getElementById('playground-canvas').appendChild(renderer.domElement);
+                camera.position.set(0, 0, 10);
+                starsGeometry = new THREE.Geometry();
+                cubesGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+
+            }
+
+            var animate = function () {
+                requestAnimationFrame(animate);
+                if (count < steps && !paused) {
+                    tsne.step();
+                    count++;
+                    $('#step').text(count)
+                    var solution = tsne.getSolution().map(function (coords, i) {
+                        return new Point(coords);
+                    });
+                    for (var iterator = 0; iterator < solution.length; iterator++) {
+                        stars[iterator].position.x = solution[iterator].coords[0] * ratio;
+                        stars[iterator].position.y = solution[iterator].coords[1] * ratio;
+                        stars[iterator].position.z = isNaN(solution[iterator].coords[2])? 0 : solution[iterator].coords[2];
+                    }
+                }
+                renderer.render(scene, camera);
+            };
+
+            function reset() {
+                paused = true;
+                tsne = new tsnejs.tSNE(opt); // create a tSNE instance
+                tsne.initDataDist(dists);
+                paused = false;
+                count = 0;
+            }
+
+            function onParamsChange() {
+                var epsilon = $('#epsilon').val();
+                var perplexity = $('#perplexity').val();
+                var pointsPerSide = $('#pointsPerSide').val();
+                var nbSteps = $('#steps').val();
+                pointsPerSide = (pointsPerSide > 8 && profile === profiles['square']) ? 8 : pointsPerSide;
+				pointsPerSide = (pointsPerSide < 20 && !(profile === profiles['square'])) ? 20 : pointsPerSide;
+				pointsPerSide = (pointsPerSide < 35 && profile === profiles['trefoil']) ? 35 : pointsPerSide;
+                var threeDModel = $('#3dModel').prop('checked');
+                $('#data-options > span.slider-value-Points').text(pointsPerSide);
+                $('#tsne-options > span.slider-value-Perplexity').text(perplexity);
+                $('#tsne-options > span.slider-value-Epsilon').text(epsilon);
+                $('#data-options > span.steps-value-Points').text(nbSteps);
+                
+                opt = {
+                    epsilon: $('#epsilon').val(), // epsilon is learning rate (5 = default)
+                    perplexity: $('#perplexity').val(), // roughly how many neighbors each point influences (30 = default)
+                    dim: threeDModel ? 3 : 2 // dimensionality of the embedding (2 = default)
+                }
+                paused = true;
+                clearScene();
+                starsGeometry = new THREE.Geometry();
+                cubesGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+                stars = [];
+                setDescription(profile);
+                initPoints(pointsPerSide, opt, profile, threeDModel);
+                count = 0;
+                steps = nbSteps;
+                paused = false;
+            }
+
+            function clearScene() {
+                var to_remove = [];
+
+                scene.traverse(function (child) {
+                    to_remove.push(child);
+                });
+
+                for (var i = 0; i < to_remove.length; i++) {
+                    scene.remove(to_remove[i]);
+                }
+            }
+
+            function setDescription(profile) {
+                $('#description').text(profile.description);
+            }
+
+            $('.demo-data').on('click', function () {
+                $('.demo-data').removeClass('selected');
+                this.className += ' selected';
+                profile = profiles[this.getAttribute('data-type')];
+                onParamsChange();
+            });
+
+            function playPause() {
+
+                if (paused) {
+                    $('#play-pause').removeClass('playing');
+                    $('#play-pause').addClass('paused');
+
+                } else {
+                    $('#play-pause').removeClass('paused');
+                    $('#play-pause').addClass('playing');
+
+                }
+                paused = !paused;
+            }
+            /******************************************************************/
+            $(document).ready(function () {
+                $('.demo-data').each(function () {
+                    var ctx = $(this).children('canvas')[0].getContext("2d");
+                    var img = document.getElementById(this.getAttribute('data-type'));
+                    ctx.drawImage(img, 0, 0, 150, 150)
+                });
+
+                initScene();
+                setDescription(profile);
+                initPoints(nbPoints, opt, profile, threeD);
+                animate();
+            });
+            /******************************************************************/
+        </script>
+        <img id="square" src="images/square.PNG" style="display: none">
+        <img id="link" src="images/link.png" style="display: none">
+        <img id="unlink" src="images/unlink.png" style="display: none">
+        <img id="threeClusters" src="images/threeClusters.png" style="display: none">
+        <img id="twoClusters" src="images/twoClusters.png" style="display: none">
+        <img id="trefoil" src="images/trefoil.png" style="display: none">
+        <img id="subsetClusters" src="images/subsetClusters.png" style="display: none">
+		<dt-appendix>
+		<style>
+		  dt-appendix {
+			display: block;
+			font-size: 14px;
+			line-height: 24px;
+			margin-bottom: 0;
+			border-top: 1px solid rgba(0,0,0,0.1);
+			color: rgba(0,0,0,0.5);
+			background: rgb(250, 250, 250);
+			padding-top: 36px;
+			padding-bottom: 60px;
+		  }
+		  dt-appendix h3 {
+			font-size: 16px;
+			font-weight: 500;
+			margin-top: 18px;
+			margin-bottom: 18px;
+			color: rgba(0,0,0,0.65);
+		  }
+		  dt-appendix .citation {
+			font-size: 11px;
+			line-height: 15px;
+			border-left: 1px solid rgba(0, 0, 0, 0.1);
+			padding-left: 18px;
+			border: 1px solid rgba(0,0,0,0.1);
+			background: rgba(0, 0, 0, 0.02);
+			padding: 10px 18px;
+			border-radius: 3px;
+			color: rgba(150, 150, 150, 1);
+			overflow: hidden;
+			margin-top: -12px;
+		  }
+		  dt-appendix .references {
+			font-size: 12px;
+			line-height: 20px;
+		  }
+		  dt-appendix a {
+			color: rgba(0, 0, 0, 0.6);
+		  }
+		  dt-appendix ol,
+		  dt-appendix ul {
+			padding-left: 24px;
+		  }
+		</style>
+		<div class="l-body">
+			<h3>References</h3>
+			<dt-bibliography>
+			<ol><li><b>Visualizing data using t-SNE</b>
+			  &ensp;<a href="http://www.jmlr.org/papers/volume9/vandermaaten08a/vandermaaten08a.pdf">[PDF]</a>
+			  <br>Maaten, L.v.d. and Hinton, G., 2008. Journal of Machine Learning Research, Vol 9(Nov), pp. 2579—2605. 
+			  </li></ol>
+		</dt-bibliography>
+		<style>
+		dt-cite {
+		  color: hsla(206, 90%, 20%, 0.7);
+		}
+		dt-cite .citation-number {
+		  cursor: default;
+		  white-space: nowrap;
+		  font-family: -apple-system, BlinkMacSystemFont, "Roboto", Helvetica, sans-serif;
+		  font-size: 75%;
+		  color: hsla(206, 90%, 20%, 0.7);
+		  display: inline-block;
+		  line-height: 1.1em;
+		  text-align: center;
+		  position: relative;
+		  top: -2px;
+		  margin: 0 2px;
+		}
+		figcaption dt-cite .citation-number {
+		  font-size: 11px;
+		  font-weight: normal;
+		  top: -2px;
+		  line-height: 1em;
+		}
+	  </style>
+
+
+    </body>
+</html>
