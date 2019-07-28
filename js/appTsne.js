@@ -118,7 +118,7 @@ function onParamsChange() {
     pointsPerSide = (pointsPerSide > 8 && profile === profiles['square']) ? 8 : pointsPerSide;
     pointsPerSide = (pointsPerSide < 20 && !(profile === profiles['square'])) ? 20 : pointsPerSide;
     pointsPerSide = (pointsPerSide < 35 && profile === profiles['trefoil']) ? 35 : pointsPerSide;
-    var threeDModel = $('#3dModel').prop('checked');
+    //var threeDModel = $('#3dModel').prop('checked');
     $('#data-options > span.slider-value-Points').text(pointsPerSide);
     $('#tsne-options > span.slider-value-Perplexity').text(perplexity);
     $('#tsne-options > span.slider-value-Epsilon').text(epsilon);
@@ -127,7 +127,7 @@ function onParamsChange() {
     opt = {
         epsilon: $('#epsilon').val(), // epsilon is learning rate (5 = default)
         perplexity: $('#perplexity').val(), // roughly how many neighbors each point influences (30 = default)
-        dim: threeDModel ? 3 : 2 // dimensionality of the embedding (2 = default)
+        dim: 3 // dimensionality of the embedding (3 = default)
     }
     paused = true;
     clearScene();
