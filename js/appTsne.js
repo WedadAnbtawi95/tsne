@@ -28,39 +28,16 @@ function initPoints(nbPoints, opt, profile, threeDModel) {
     dists = distanceMatrix(points);
     tsne = new tsnejs.tSNE(opt); // create a tSNE instance
     tsne.initDataDist(dists);
-    if (threeDModel) {
-        for (var i = 0; i < points.length; i++) {
-            var color = points[i].color;
-            var material = new THREE.MeshBasicMaterial({color: color});
-            var mesh = new THREE.Mesh(cubesGeometry, material);
-            mesh.position.x = points[i].coords[0] * ratio;
-            mesh.position.y = points[i].coords[1] * ratio;
-            mesh.position.z = points[i].coords[2] * ratio;
-            stars.push(mesh);
-            scene.add(mesh);
-        }
-    } else {
-        for (var i = 0; i < points.length; i++) {
-            var star = new THREE.Vector3();
-            star.x = points[i].coords[0] * ratio;
-            star.y = points[i].coords[1] * ratio;
-            star.z = 0;
-            starsGeometry.vertices.push(star);
-            var color = points[i].color;
-            var texture = new THREE.TextureLoader().load('textures/circle.png');
-            var starsMaterial = new THREE.PointsMaterial({
-                size: 0.5,
-                color: color,
-                map: texture,
-                transparent: true,
-                depthWrite: false
-            });
-            var starField = new THREE.Points(starsGeometry, starsMaterial);
-            stars.push(starField);
-            scene.add(starField);
-        }
+    for (var i = 0; i < points.length; i++) {
+        var color = points[i].color;
+        var material = new THREE.MeshBasicMaterial({color: color});
+        var mesh = new THREE.Mesh(cubesGeometry, material);
+        mesh.position.x = points[i].coords[0] * ratio;
+        mesh.position.y = points[i].coords[1] * ratio;
+        mesh.position.z = points[i].coords[2] * ratio;
+        stars.push(mesh);
+        scene.add(mesh);
     }
-
 
 }
 
@@ -96,7 +73,7 @@ var animate = function () {
         for (var iterator = 0; iterator < solution.length; iterator++) {
             stars[iterator].position.x = solution[iterator].coords[0] * ratio;
             stars[iterator].position.y = solution[iterator].coords[1] * ratio;
-            stars[iterator].position.z = isNaN(solution[iterator].coords[2]) ? 0 : solution[iterator].coords[2];
+            stars[iterator].position.z = solution[iterator].coords[2];
         }
     }
 
@@ -118,7 +95,7 @@ function onParamsChange() {
     pointsPerSide = (pointsPerSide > 8 && profile === profiles['square']) ? 8 : pointsPerSide;
     pointsPerSide = (pointsPerSide < 20 && !(profile === profiles['square'])) ? 20 : pointsPerSide;
     pointsPerSide = (pointsPerSide < 35 && profile === profiles['trefoil']) ? 35 : pointsPerSide;
-    //var threeDModel = $('#3dModel').prop('checked');
+    var threeDModel = true;
     $('#data-options > span.slider-value-Points').text(pointsPerSide);
     $('#tsne-options > span.slider-value-Perplexity').text(perplexity);
     $('#tsne-options > span.slider-value-Epsilon').text(epsilon);
@@ -135,7 +112,7 @@ function onParamsChange() {
     cubesGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
     stars = [];
     setDescription(profile);
-    initPoints(pointsPerSide, opt, profile, true);
+    initPoints(pointsPerSide, opt, profile, threeDModel);
     count = 0;
     steps = nbSteps;
     paused = false;
