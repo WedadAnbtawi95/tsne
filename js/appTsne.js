@@ -135,7 +135,7 @@ function onParamsChange() {
     cubesGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.3);
     stars = [];
     setDescription(profile);
-    initPoints(pointsPerSide, opt, profile, threeDModel);
+    initPoints(pointsPerSide, opt, profile, true);
     count = 0;
     steps = nbSteps;
     paused = false;
