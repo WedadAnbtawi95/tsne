@@ -1,644 +1,1173 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>t-SNE.js</title>
-    <meta charset="utf-8"/>
-    <script type="text/javascript" charset="UTF-8" src="js/three.js"></script>
-    <script type="text/javascript" charset="UTF-8" src="js/TrackballControls.js"></script>
-    <script type="text/javascript" src="js/OrbitControls.js"></script>
-    <script type="text/javascript" src="js/Stats.js"></script>
-    <script type="text/javascript" src="js/dat.gui.js"></script>
-    <script type="text/javascript" src="js/util.js"></script>
-    <script type="text/javascript" src="js/underscore.js"></script>
-    <link rel="stylesheet" href="css/styles.css"/>
-</head>
-<body onload="init()">
-<h1 class="l-middle">Interactive t-SNE</h1>
-<div class="container">
-    <p style="text-align: left;"> You can upload your own data as csv file with the first column as is label and the
-        rest of the columns as features. The label will be used as the color of the datapoint. You can change the view
-        using the mouse or using the keys (x,y,z).</p>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>t-SNE ThreeJS</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <div class="panel">
-        <div id="control-panel" data-sr="enter left over 8s">
-            <div class="param">
-                <label for="param-perplexity">Database</label>
-                <input type="file" id="filechoice" onchange="checkfile(this);"/>
-                <output></output>
+        <link href="material-icons.css" rel="stylesheet">
+        <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+        <script src="js/tsne.js"></script>
+        <script src="js/three.js"></script>
+        <script src="js/orbit.js"></script>
+        <script src="js/d3.min.js"></script>
+
+    </head>
+    <body>
+	  <h1 class="l-middle">How to use t-SNE effectively, with ThreeJS support</h1>
+
+        <div class="l-page">
+            <style>
+                #playground {
+                    overflow: hidden;
+                    font-family: 'Open Sans', sans-serif;
+                    padding: 36px 0 0 0;
+                    z-index: 1000;
+					height: 700px
+                }
+
+                #playground * {
+                    box-sizing: border-box;
+                }
+
+                #playground.modal {
+                    position: fixed;
+                    left: 10px;
+                    right: 10px;
+                    top: 50px;
+                }
+
+                /* Playground Canvas */
+                #playground-canvas {
+                    float: left;
+                }
+
+                #playground-canvas canvas {
+                    width: 100%;
+                }
+
+                /* Data Menu */
+                #data-menu {
+                    /*float: left;*/
+                    /*width: 25%*/
+                    width: 40%;
+                    float: left;
+                    margin-bottom: 24px;
+                    overflow: hidden;
+                    margin-left: 5%;
+                }
+                #data-menu .demo-data {
+                    cursor: pointer;
+                    position: relative;
+                    font-size: 10px;
+                    line-height: 1.2em;
+                    box-sizing: border-box;
+                    float: left;
+                    margin: 2px;
+                    padding: 4px;
+                    width: calc(33% - 4px);
+                    background: white;
+                    border: 1px solid rgba(0, 0, 0, 0.1);
+                    border-radius: 4px;
+                    box-shadow: 0 0 3px rgba(0, 0, 0, 0.08);
+                }
+                @media(min-width: 480px) {
+                    #data-menu .demo-data {
+                        width: calc(25% - 8px);
+                        padding: 8px;
+                        margin: 4px;
+                    }
+                }
+                @media(min-width: 768px) {
+                    #data-menu .demo-data {
+                        width: calc(16.5% - 8px);
+                        padding: 8px;
+                        margin: 4px;
+                    }
+                }
+                #data-menu .demo-data:hover {
+                    border: 1px solid rgba(0, 0, 0, 0.2);
+
+                }
+                #data-menu .demo-data.selected::after {
+                    content: "";
+                    border: 2px solid rgba(70, 130, 180, 0.8);
+                    width: 100%;
+                    height: 100%;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    box-sizing: border-box;
+                    border-radius: 4px;
+                }
+                #data-menu .demo-data span {
+                    display: none;
+                }
+                #data-menu .demo-data:hover canvas {
+                    opacity: 1;
+                }
+                #data-menu .demo-data canvas {
+                    width: 100%;
+                    opacity: 0.3;
+                }
+                #data-menu .demo-data.selected canvas {
+                    opacity: 1;
+                }
+
+                /* Data Details */
+                #data-details {
+                    position: relative;
+                }
+
+                @media(min-width: 768px) {
+                    #data-details {
+                        width: 40%;
+                        float: right;
+                    }
+                }
+
+                #data-details #data-controls {
+                    width: 40%;
+                    float: right;
+                    position: relative;
+                    overflow: hidden;
+                    font-size: 13px;
+                }
+
+                @media(min-width: 768px) {
+                    #data-details #data-controls {
+                        width: 50%;
+                        margin-right: 10%;
+                        float: left;
+                    }
+                }
+
+                #data-details #play-controls {
+                    margin-bottom: 18px;
+                    overflow: hidden;
+                    position: relative;
+                }
+                #data-details #play-controls button {
+                    cursor: pointer;
+                    outline: none;
+                    border-radius: 50%;
+                    background: steelblue;
+                    color: white;
+                    width: 25%;
+                    margin-right: 5%;
+                    padding-top: 25%;
+                    padding-bottom: 0;
+                    border: none;
+                    float: left;
+                    position: relative;
+                }
+                #play-controls i {
+                    display: block;
+                    position: absolute;
+                    top: 50%;
+                    left: 0;
+                    width: 100%;
+                    height: 36px;
+                    font-size: 24px;
+                    line-height: 0;
+                }
+                @media(min-width: 768px) {
+                    #play-controls i {
+                        font-size: 30px;
+                    }
+                }
+                #play-controls #play-pause i {
+                    display: none;
+                    position: absolute;
+                }
+                #play-controls #play-pause.paused i:nth-child(1) {
+                    display: block;
+                }
+                #play-controls #play-pause.playing i:nth-child(2) {
+                    display: block;
+                }
+
+                #steps-display {
+                    float: left;
+                    text-align: center;
+                    width: 25%;
+                    line-height: 1.5em;
+                    font-size: 13px;
+                }
+
+                @media(min-width: 1024px) {
+                    #steps-display {
+                        font-size: 16px;
+                        line-height: 1.6em;
+                    }
+                }
+                #data-details #data-description {
+                    width: 50%;
+                    margin-right: 10%;
+                    float: right;
+                    font-size: 14px;
+                    line-height: 1.6em;
+                }
+
+                @media(min-width: 768px) {
+                    #data-details #data-description {
+                        width: 40%;
+                        float: left;
+                        margin-right: 0;
+                    }
+                }
+
+                /* Options */
+                #data-details #options {
+                    float: left;
+                    padding-left: 36px;
+                    font-size: 13px;
+                    line-height: 1.5em;
+                    width: 45%;
+                }
+                #data-details input {
+                    display: block;
+                    width: 100%;
+                    margin: 8px 0 16px 0;
+                }
+
+                #options #data-options {
+                    width: 45%;
+                    margin-left: 4px;
+                }
+                #options #tsne-options {
+                    width: 45%;
+                    margin-left: 4px;
+                }
+
+                #data-details #share {
+                    margin-top: 8px;
+                    display: block;
+                    color: rgba(0, 0, 0, 0.4);
+                    text-decoration: none;
+                    font-size: 12px;
+                }
+
+                #data-details #share:hover {
+                    text-decoration: underline;
+                }
+
+                #data-details #share i {
+                    line-height: 0px;
+                    position: relative;
+                    top: 7px;
+                }
+
+            </style>
+            <div id="playground">
+
+                <div id="playground-canvas" style="width: 52%; border: solid #eee;">
+
+                </div>
+
+                <div id="data-menu">
+                    <div class="demo-data selected" data-type="square">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Square Grid</span>
+                    </div>
+                    <div class="demo-data" data-type="trefoil">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Trefoil</span>
+                    </div>
+                    <div class="demo-data" data-type="link">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Link</span>
+                    </div>
+                    <div class="demo-data" data-type="unlink">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Unlink</span>
+                    </div>
+                    <div class="demo-data" data-type="subsetClusters">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Subset Clusters</span>
+                    </div>
+                    <div class="demo-data" data-type="threeClusters">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Three Clusters</span>
+                    </div>
+                    <div class="demo-data" data-type="twoClusters">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Two Clusters</span>
+                    </div>
+                </div>
+
+                <div id="data-details">
+                    <div id="data-controls">
+                        <div id="play-controls">
+                            <button id="play-pause" class="playing" onclick="playPause()"><i class="material-icons">play_arrow</i><i class="material-icons">pause</i></button>
+                            <button id="restart" onclick="reset()"><i class="material-icons">refresh</i></button>
+                            <div id="steps-display">
+                                Step<br><span id="step">5,000</span>
+                            </div>
+                        </div>
+                        <div id="data-options">
+                            <span class="slider-label-Points Per Side">Points Per Side </span>
+                            <span class="slider-value-Points Per Side">8</span>
+                            <input type="range" min="4" max="500" value="8" id="pointsPerSide" onchange="onParamsChange()">
+
+                            <span class="slider-label-Points Per Side">Steps </span>
+                            <span class="steps-value-Points Per Side">200</span>
+                            <input type="range" min="200" max="5000" value="200" id="steps" onchange="onParamsChange()">
+                        </div>
+                        <div id="tsne-options">
+                            <span class="slider-label-Perplexity">Perplexity </span>
+                            <span class="slider-value-Perplexity">30</span><input type="range" min="2" max="50" value="30" id="perplexity" onchange="onParamsChange()">
+                            <span class="slider-label-Epsilon">Epsilon </span><span class="slider-value-Epsilon">5</span>
+                            <input type="range" min="1" max="20" value="5" id="epsilon" onchange="onParamsChange()"></div>
+                    </div>
+                    <div>
+                        <p id="description">Quick Description</p>
+                    </div>
+                </div>
             </div>
-            <div class="param">
-                <label for="param-nsamples">Number of Samples</label>
-                <input id="param-nsamples" type="range" min="100" max="2000" value="500" step="100">
-                <output for="param-nsamples" id="param-nsample-value">500</output>
-            </div>
-            <div class="param">
-                <label for="param-perplexity">Perplexity</label>
-                <input id="param-perplexity" type="range" min="5" max="100" value="30" step="1">
-                <output for="param-perplexity" id="param-perplexity-value">30</output>
-            </div>
-            <div class="param">
-                <label for="param-earlyexag">Early Exaggeration</label>
-                <input id="param-earlyexag" type="range" min="1.1" max="50.0" value="2.1" step="0.1">
-                <output for="param-earlyexag" id="param-earlyexag-value">2.1</output>
-            </div>
-            <div class="param">
-                <label for="param-learningrate">Learning Rate</label>
-                <input id="param-learningrate" type="range" min="1" max="1000" value="80" step="1">
-                <output for="param-learningrate" id="param-learningrate-value">80</output>
-            </div>
-            <div class="param">
-                <label for="param-maxiter">Max Iterations</label>
-                <input id="param-maxiter" type="range" min="100" max="1000" value="150" step="10">
-                <output for="param-maxiter" id="param-maxiter-value">150</output>
-            </div>
-            <div class="param">
-                <label for="param-dim">3D Dimension</label>
-                <input type="checkbox" id="3dModel" checked style="width: 40%; display: inline-block">
-                <output></output>
-            </div>
-            <div id="run-button" onclick="rundraw()">Run</div>
         </div>
-        <div id="webgl-output"></div>
-    </div>
-</div>
+		<p>Data visualization is an important tool to understand and interpret the data in many different areas. Having high dimensional datasets will make it difficult to visualize the data. In order to visualize high dimensional data, we need first to apply dimensionality reduction. Dimensionality reduction converts data from a high dimensional representation into a low dimensional one that can be visualized. One of the important available techniques is t-distributed stochastic neighbor embedding (t-SNE). t-SNE is first proposed by <dt-cite key="maaten2008visualizing"><span id="citation-0" data-hover-ref="dt-cite-hover-box-0">van der Maaten and Hinton in 2008 <span class="citation-number">[1]</span></span></dt-cite>.</p>
 
-<!----------- SCRIPTS ------------>
+	<p>This technique is a user-interactive technique where the output will depend on the parameters given by the user. The first parameter is “perplexity which represents the effective number of neighbors considered for each data point. Different perplexity values can give different visualizations with different structures.” Another user-defined parameter is the “epsilon” which represents the learning rate in the algorithm. Usually, epsilon is in the range between 10 and 1000 and the user should try different values to get into the good results.</p>
 
-<script src="js/jquery.min.js"></script>
-<script src="js/tsne.min.js"></script>
-<script>
-    'use strict';
-    var N_SAMPLES;
-    var worker;
-    var count = 0;
-    var myReq;
-    var nIter;
-    var fileuploaded = false;
-    var frameId;
-    var N_classes;
-    var SAMPLE_DATA;
-    var SAMPLE_LABELS;
-    var stats;
-    var lowdim;
-    var stars = [];
-    var firstRun;
-    var camera, scene, renderer, orbitControls, raycaster;
-    var mouse, INTERSECTED;
-    var points, clock, colors, embeddingSpace;
-    var drawCount;
-    var update = false;
+	<p>In this page, we resume the work started at <dt-cite key="distill"><span id="citation-0" data-hover-ref="dt-cite-hover-box-0">"<a href="https://distill.pub/2016/misread-tsne/">How to Use t-SNE Effectively</a>" <span class="citation-number">[2]</span></span></dt-cite> about how to interpret t-SNE plots, but in 3D. We estimate that 3D plots equipped with a camera may give better insights and quality of experience to the end-user. To this end, we use the threeJS library.</p>
+	<p>In addition to using these templates, you can upload your own data to "<a href="https://wedadanbtawi95.github.io/tsneVisualization/">Interactive t-SNE</a>".</p>
+	  <hr>
 
-    function checkfile(sender) {
-        var validExt = ".csv";
-        var fileExt = sender.value;
-        fileExt = fileExt.substring(fileExt.lastIndexOf('.'));
-        if (validExt == fileExt) {
-            fileuploaded = true;
-            return true;
-        } else {
-            fileuploaded = false;
-            alert("Invalid file selected, valid files are of " + validExt + " type.");
-            return false;
-        }
-    }
+      <img id="square" src="images/square.PNG" style="display: none">
+      <img id="link" src="images/link.png" style="display: none">
+      <img id="unlink" src="images/unlink.png" style="display: none">
+      <img id="threeClusters" src="images/threeClusters.png" style="display: none">
+      <img id="twoClusters" src="images/twoClusters.png" style="display: none">
+      <img id="trefoil" src="images/trefoil.png" style="display: none">
+      <img id="subsetClusters" src="images/subsetClusters.png" style="display: none">
+	  <!--***********************-->
+      <h2>1. Perplexity really matters</h2>
+      <p>Since t-SNE results depend on the user-defined parameters, different perlexity values can give different results. As mentioned before, perplexity represents the number of nearest neighbors, so its value depends on the size of the dataset. It was recommended by van der Maaten & Hinton to choose perplexity value from the range 5 to 50. The diagrams below show t-SNE plots for five different perplexity values.</p>
+      <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
+          <div class="original">
+              <div class="image">
+                  <img class="tsne-plot" src="assets/figure_01_original.png">
+              </div>
+              <h3 class="caption">Original</h3>
+          </div>
+          <div class="runner clickable" onclick="runTray(2, 200, 30, 50, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_01_01.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 2</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(5, 200, 30, 50, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_01_02.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 5</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(30, 200, 30, 50, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_01_03.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 30</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(50, 200, 30, 50, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_01_04.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 50</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(80, 200, 30, 50, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_01_05.png"></div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 80</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+      </div>
+		<p>Each diagram shows different result of 50 data points caused by different perplexity value. Going out of the suggested range, i.e. outside (5,50), t-SNE results become less explainable. With perplexity 2, clusters aren't clearly separated. At perplexity 80, which is more than the number of data points, t-SNE isn't working prpoerly and the clusters are about to merge.</p>
+		<p>We can see that at perplexity 50, the clusters are very clear and it  gives a good sense of the global geometry, but does that mean that we should use only perplexity 50? The answer is NO, perplexity depends on the number of samples. In the above diagrams, we used 50 points so as testing we used 500 points in the below five diagrams to check if the best perplexity is still at 50.  </p>
+      <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
+          <div class="original">
+              <div class="image">
+                  <img class="tsne-plot" src="assets/figure_01e_original.png">
+              </div>
+              <h3 class="caption">Original</h3>
+          </div>
+          <div class="runner clickable" onclick="runTray(2, 200, 30, 500, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_01e_01.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 2</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(5, 200, 30, 500, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_01e_02.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 5</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 100</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(30, 200, 30, 500, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_01e_03.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 30</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(50, 200, 30, 500, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_01e_04.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 50</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(80, 200, 30, 500, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_01e_05.png"></div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 80</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+      </div>
+	  <p> Now, none of the trial perplexity values gives a good sense of the global geometry. There may not be one perplexity value that will capture distances across all clusters but the user should try many values to get into the right one.
 
-    function getRandomColor() {
-        var letters = '012345'.split('');
-        var color = '#';
-        color += letters[Math.round(Math.random() * 5)];
-        letters = '0123456789ABCDEF'.split('');
-        for (var i = 0; i < 5; i++) {
-            color += letters[Math.round(Math.random() * 15)];
-        }
-        return color;
-    }
+      <h2>2. Number of iterations and good result</h2>
+      <p>t-SNE goal is to minimize the difference in similarity between points in high dimensional space and the desired low dimensional space, but when should we stop? should the number of iterations be infinite? We can't use a very big number of iterations, we should keep iterating until reaching stability in the result because at some step the points won't keep moving much.</p>
+      <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
+          <div class="original">
+              <div class="image">
+                  <img class="tsne-plot" src="assets/figure_01_original.png">
+              </div>
+              <h3 class="caption">Original</h3>
+          </div>
+          <div class="runner clickable" onclick="runTray(30, 50, 10, 50, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_02_01.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 30</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 50</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(30, 100, 10, 50, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_02_02.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 30</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 100</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(30, 200, 10, 50, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_02_03.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 30</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(30, 400, 10, 50, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_02_04.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 30</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 400</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(30, 1000, 10, 50, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_02_05.png"></div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 30</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 1,000</div>
+              </div>
+          </div>
+      </div>
+		<p>The images above show five different runs at perplexity 30. It is obvious that after 200 steps, the clusters become clearly separate and the convergence is reached. Unfortunately, the number of iterations required differ from a data set to another.</p>
 
-    function render() {
-        orbitControls.update(clock.getDelta());
-        requestAnimationFrame(render);
-        if ((lowdim == 2) && (drawCount == 1)) {
-            points.geometry.attributes.position.needsUpdate = true; // required after the first render
-        }
-        renderer.render(scene, camera)
-    }
+	    <h2>3. Learning rate (epsilon) really matter</h2>
+      <p>A second parameter in t-SNE is the learning rate which is mentioned as “epsilon”. This parameter control the movement of the points, so it is difficult to decide if a large or a small value is needed before running the algorithm with random values. The below five diagrams show how different epsilon values will lead to different results.</p>
+      <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
+          <div class="original">
+              <div class="image">
+                  <img class="tsne-plot" src="assets/figure_01_original.png">
+              </div>
+              <h3 class="caption">Original</h3>
+          </div>
+          <div class="runner clickable" onclick="runTray(30, 1000, 10, 50, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_03_01.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 30</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 1,000</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(30, 1000, 50, 50, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_03_02.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 30</div>
+				  <div>Epsilon: 50</div>
+                  <div>Step: 1,000</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(30, 1000, 100, 50, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_03_03.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 30</div>
+				  <div>Epsilon: 100</div>
+                  <div>Step: 1,000</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(30, 1000, 500, 50, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_03_04.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 30</div>
+				  <div>Epsilon: 500</div>
+                  <div>Step: 1,000</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(30, 1000, 1000, 50, profiles['twoClusters'])">
+              <div class="image">
+                  <img src="assets/figure_03_05.png"></div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 30</div>
+				  <div>Epsilon: 1000</div>
+                  <div>Step: 1,000</div>
+              </div>
+          </div>
+      </div>
+	  <h2>4. More plots may be needed for topology</h2>
+	  <p>Depending on the parameters mentioned before, perlexity and epsilon, t-SNE plot can sometimes output topology shapes. One of the topological properties illustrated by <dt-cite key="distill"><span id="citation-0" data-hover-ref="dt-cite-hover-box-0">"<a href="https://distill.pub/2016/misread-tsne/">How to Use t-SNE Effectively</a>" <span class="citation-number">[2]</span></span></dt-cite> is containment. The plots below show two groups of 200 points in 50 dimensional space. Both are sampled from symmetric Gaussian distributions centered at the origin, but one is 50 times more tightly dispersed than the other. The “small” distribution is in effect contained in the large one.
+	  <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
+          <div class="original">
+              <div class="image">
+                  <img class="tsne-plot" src="assets/figure_04a_original.png">
+              </div>
+              <h3 class="caption">Original</h3>
+          </div>
+          <div class="runner clickable" onclick="runTray(2, 200, 30, 200, profiles['subsetClusters'])">
+              <div class="image">
+                  <img src="assets/figure_04a_01.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 2</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(5, 200, 30, 200, profiles['subsetClusters'])">
+              <div class="image">
+                  <img src="assets/figure_04a_02.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 5</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 100</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(30, 200, 30, 200, profiles['subsetClusters'])">
+              <div class="image">
+                  <img src="assets/figure_04a_03.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 30</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(50, 200, 30, 200, profiles['subsetClusters'])">
+              <div class="image">
+                  <img src="assets/figure_04a_04.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 50</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(80, 200, 30, 200, profiles['subsetClusters'])">
+              <div class="image">
+                  <img src="assets/figure_04a_05.png"></div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 80</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+      </div>
+	  <p>Starting from perplexity 30, we start to see some of the topologies where one cluster is contained in another. At perplexity 50, the outer group becomes a sphere around the inner group where all its points are about the same distance from the inner group. Looking at the plot as 2D instead of 3D, it will be hard to see the topology and it will show that the clusters aren't really separate.</p>
+	<p>More types of topology can be done using t-SNE with different parameters' values. Some of these types are a link or a knot in three dimensions. As we look, before perplexity 30, none of the topologies was achieved. Looking into the link example at perplexity 30, as the 2D image, it shows that we have two circles linked together, but using the option of moving the plot around we can see that the two circles are unlinked.</p>
+	<div class="l-page-outset tsne-group" id="figures-01" data-id="01">
+          <div class="original">
+              <div class="image">
+                  <img class="tsne-plot" src="assets/figure_04_original.png">
+              </div>
+              <h3 class="caption">Original</h3>
+          </div>
+          <div class="runner clickable" onclick="runTray(2, 200, 30, 200, profiles['link'])">
+              <div class="image">
+                  <img src="assets/figure_04_01.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 2</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(5, 200, 30, 200, profiles['link'])">
+              <div class="image">
+                  <img src="assets/figure_04_02.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 5</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 100</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(30, 200, 30, 200, profiles['link'])">
+              <div class="image">
+                  <img src="assets/figure_04_03.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 30</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(50, 200, 30, 200, profiles['link'])">
+              <div class="image">
+                  <img src="assets/figure_04_04.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 50</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(80, 200, 30, 200, profiles['link'])">
+              <div class="image">
+                  <img src="assets/figure_04_05.png"></div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 80</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+      </div>
+	        <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
+          <div class="original">
+              <div class="image">
+                  <img class="tsne-plot" src="assets/figure_04e_original.png">
+              </div>
+              <h3 class="caption">Original</h3>
+          </div>
+          <div class="runner clickable" onclick="runTray(2, 200, 30, 200, profiles['trefoil'])">
+              <div class="image">
+                  <img src="assets/figure_04e_01.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 2</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(5, 200, 30, 200, profiles['trefoil'])">
+              <div class="image">
+                  <img src="assets/figure_04e_02.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 5</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(30, 200, 30, 200, profiles['trefoil'])">
+              <div class="image">
+                  <img src="assets/figure_04e_03.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 30</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(50, 200, 30, 200, profiles['trefoil'])">
+              <div class="image">
+                  <img src="assets/figure_04e_04.png">
+              </div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 50</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 1000</div>
+              </div>
+          </div>
+          <div class="runner clickable" onclick="runTray(80, 200, 30, 200, profiles['trefoil'])">
+              <div class="image">
+                  <img src="assets/figure_04e_05.png"></div>
+              <i class="material-icons">open_in_browser</i>
+              <div class="caption">
+                  <div>Perplexity: 80</div>
+				  <div>Epsilon: 10</div>
+                  <div>Step: 200</div>
+              </div>
+          </div>
+      </div>
+	  <hr>
+	  <h2> Conclusion </h2>
+	  <p>t-SNE is now considered one of the top  dimensionality-reduction algorithms. It is a very flexible and user interactive tool. But some of its limits are its computational complexity and the importance of trying many values of parameters to get good results.</p>
+      <!--dont touch this-->
+      <style>
 
-    function init() {
-        firstRun = true;
-        update = true;
-        drawCount = 0;
-        clock = new THREE.Clock();
-        scene = new THREE.Scene();
-        var light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(1, 1, 1).normalize();
-        scene.add(light);
-        embeddingSpace = document.getElementById('webgl-output');
-        camera = new THREE.PerspectiveCamera(100, embeddingSpace.clientWidth / embeddingSpace.clientWidth, 1, 10);
-        camera.position.set(0, 2, 0);
-        raycaster = new THREE.Raycaster();
-        // initialize object to perform world/screen calculations
-        mouse = new THREE.Vector2();
-        renderer = new THREE.WebGLRenderer();
-        renderer.setClearColor(0xffffff, 1);
-        renderer.setSize(embeddingSpace.clientWidth, embeddingSpace.clientWidth);
-        orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
-        embeddingSpace.appendChild(renderer.domElement);
-        renderer.render(scene, camera);
-        var trackballControls = new THREE.TrackballControls(camera, renderer.domElement);
-        render();
-        document.addEventListener("keydown", onDocumentKeyDown, false);
+          .tsne-group {
+              overflow: visible;
+              display: -webkit-flex;
+              display: flex;
+              flex-direction: column;
+              margin-top: 36px;
+              margin-bottom: 36px;
+          }
 
-        //document.addEventListener( 'mousedown', onDocumentMouseDown, false );
-        function onDocumentKeyDown(event) {
-            var keyCode = event.which;
-            if (keyCode == 88) {
-                camera.position.set(2, 0, 0);
-            } else if (keyCode == 89) {
-                camera.position.set(0, 2, 0);
-            } else if (keyCode == 90) {
-                camera.position.set(0, 0, 2);
-            } else if (keyCode == 79) {
-                camera.position.set(1, 1, 1);
-            }
-        };
+          @media(min-width: 640px) {
+              .tsne-group {
+                  -webkit-flex-direction: row;
+                  flex-direction: row;
+              }
+          }
 
-    }
+          .tsne-group .original,
+          .tsne-group .runner {
+              box-sizing: border-box;
+              -webkit-flex-grow: 1;
+              flex-grow: 1;
+              position: relative;
+              display: -webkit-flex;
+              display: flex;
+              margin-bottom: 12px;
+          }
 
-    function onDocumentMouseDown(event) {
-        var mouse3D = new THREE.Vector2(event.clientX / embeddingSpace.clientWidth * 2 - 1,
-            -(event.clientY / embeddingSpace.clientHeight) * 2 + 1);
-        console.log(mouse3D);
-        mouse3D.sub(camera.position);
-        mouse3D.normalize();
-        raycaster.setFromCamera(mouse3D, camera);
-        // find intersections
-        var geometry = points.geometry;
-        var attributes = geometry.attributes;
-        var intersects = raycaster.intersectObjects(points, true);
-        // Change color if hit block
-        if (intersects.length > 0) {
-            console.log("Hit @ " + attributes.label.array[INTERSECTED]);
-            INTERSECTED = intersects[0].index;
-        }
-    }
+          .tsne-group .original {
+              position: relative;
+              border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+              padding-bottom: 12px;
+          }
 
-    function toString(v) {
-        return "[ " + v.x + ", " + v.y + ", " + v.z + " ]";
-    }
+          @media(min-width: 640px) {
+              .tsne-group .original,
+              .tsne-group .runner {
+                  display: block;
+                  width: 100%;
+                  margin-bottom: 0;
+              }
 
-    function componentToHex(c) {
-        var hex = c.toString(16);
-        return hex.length == 1 ? "0" + hex : hex;
-    }
+              .tsne-group .original {
+                  margin-left: 0;
+                  padding-right: 12px;
+                  border-right: 1px solid rgba(0, 0, 0, 0.1);
+                  border-bottom: none;
+                  padding-bottom: 0;
+              }
 
-    function rgbToHex(r, g, b) {
-        return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
-    }
+              .tsne-group .runner {
+                  margin-left: 12px;
+              }
+          }
 
-    function draw(num) {
-        Array.prototype.unique = function () {
-            return this.filter(function (value, index, self) {
-                return self.indexOf(value) === index;
-            });
-        }
+          .tsne-group .runner.no-click {
+              cursor: default;
+          }
 
-        function _draw(SAMPLE_DATA, SAMPLE_LABELS) {
-            var sampleData = SAMPLE_DATA;
-            var sampleLabels = SAMPLE_LABELS;
-            var labels = sampleLabels.unique();
-            var colorsLabels = [];
-            for (var i = 0; i < labels.length; i++) {
-                var j = 0;
-                var newcolor = [Math.random() * 0.9, Math.random() * 0.9, Math.random() * 0.9];
-                while (j < colorsLabels.length) {
-                    //check if the new color is already in the colorslabels array
-                    if (_.isEqual(newcolor, colorsLabels.slice(j, j + 3))) {
-                        j = 0;
-                        newcolor = [Math.random() * 0.9, Math.random() * 0.9, Math.random() * 0.9];
-                    } else {
-                        j = j + 3;
-                    }
-                }
-                colorsLabels = colorsLabels.concat(newcolor);
-            }
-            var positions = [];
-            var info = [];
-            colors = [];
-            var color = new THREE.Color();
-            if (lowdim == 3) {
-                var geometry = new THREE.BoxGeometry(0.04, 0.04, 0.04);
-                for (var i = 0; i < num; i++) {
-                    var label = labels.indexOf(sampleLabels[i]);
-                    var color = new THREE.Color(colorsLabels[label * 3], colorsLabels[label * 3 + 1], colorsLabels[label * 3 + 2]);
-                    var material = new THREE.MeshBasicMaterial({color: color});
-                    var mesh = new THREE.Mesh(geometry, material);
-                    mesh.position.x = Math.random() * (-2) + 1;
-                    mesh.position.y = Math.random() * (-2) + 1;
-                    mesh.position.z = Math.random() * (-2) + 1;
-                    mesh.userData.tooltipText = "uuid: " + mesh.uuid + " color: " + label + " x: " + mesh.position.x + " y: " + mesh.position.y + " z: " + mesh.position.z;
-                    stars.push(mesh);
-                    scene.add(mesh);
-                }
-            } else {
-                //var starsGeometry = new THREE.Geometry();
-                for (var i = 0; i < num; i++) {
-                    var geometry = new THREE.BufferGeometry();
-                    var positions = [];
-                    var info = [];
-                    colors = [];
-                    var color = new THREE.Color();
-                    for (var i = 0; i < num; i++) {
-                        // positions
-                        var x = 0;
-                        var y = 0;
-                        var z = 0;
-                        positions.push(x, y, z);
-                        // colors
-                        info.push(sampleLabels[i]);
-                        var label = labels.indexOf(sampleLabels[i]);
-                        colors.push(colorsLabels[label * 3], colorsLabels[label * 3 + 1], colorsLabels[label * 3 + 2]);
-                    }
-                    geometry.addAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-                    geometry.addAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-                    geometry.addAttribute('label', new THREE.Float32BufferAttribute(info, 1));
-                    geometry.computeBoundingSphere();
-                    var texture = new THREE.TextureLoader().load('textures/circle.png');
-                    var material = new THREE.PointsMaterial({
-                        size: 0.05,
-                        vertexColors: THREE.VertexColors,
-                        map: texture,
-                        transparent: true,
-                        depthWrite: false
-                    });
-                    points = new THREE.Points(geometry, material);
-                    scene.add(points);
+          .runner.clickable {
+              cursor: pointer;
+          }
 
-                    drawCount = 1;
-                }
-            }
-            //var opt = {}
-            var perplexity = parseInt($('#param-perplexity').val());
-            var earlyExaggeration = parseFloat($('#param-earlyexag').val());
-            var epsilon = parseInt($('#param-learningrate').val());
-            var dim = lowdim; // dimensionality of the embedding (2 = default)
-            worker.postMessage({
-                type: 'INPUT_DATA',
-                data: sampleData
-            });
-            worker.postMessage({
-                type: 'RUN',
-                data: {
-                    perplexity: perplexity,
-                    earlyExaggeration: earlyExaggeration,
-                    learningRate: epsilon,
-                    nIter: nIter,
-                    dim: dim
-                }
-            });
-        }
+          .runner.clickable:hover .image {
+              box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+          }
 
-        if (SAMPLE_DATA) {
-            _draw(SAMPLE_DATA, SAMPLE_LABELS);
-        } else {
-            read();
+          .runner:hover i {
+              opacity: 1;
+          }
 
-            function read() {
-                var fr = new FileReader();
-                fr.onload = function () {
-                    document.getElementById('contents').textContent = this.result;
-                };
-                fr.readAsText(document.getElementById('filechoice').files[0]);
-                fr.onload = loadHandler;
-            };
+          .runner.selected i {
+              opacity: 1;
+          }
 
-            function loadHandler(event) {
-                var csv = event.target.result;
-                processData(csv);
-            }
+          .runner i {
+              font-size: 30px;
+              position: absolute;
+              top: 1px;
+              left: 1px;
+              background-color: hsla(207, 44%, 79%, 0.8);
+              color: steelblue;
+              border-radius: 4px;
+              opacity: 0;
+              transition: opacity 0.3s;
+              line-height: 0;
+              width: 150px;
+              padding: 75px 0;
+              text-align: center;
+          }
 
-            function processData(csv) {
-                var allTextLines = csv.split(/\r\n|\n/);
-                var lines = [];
-                var labels = [];
-                var sampledata = [];
-                for (var i = 1; i < N_SAMPLES + 1; i++) {
-                    var row = allTextLines[i].split(',');
-                    labels.push(row[0]);
-                    sampledata.push(row.slice(1).map(function (item) {
-                        return parseInt(item, 10);
-                    }));
-                }
-                SAMPLE_DATA = sampledata;
-                SAMPLE_LABELS = labels;
-                _draw(SAMPLE_DATA, SAMPLE_LABELS);
-            }
-        }
+          @media(min-width: 640px) {
+              .runner i {
+                  width: 100%;
+                  padding: 50% 0;
+              }
+          }
 
-    }
+          .runner.selected .image::after {
+              content: "";
+              border: 2px solid rgba(70, 130, 180, 1);
+              width: 100%;
+              height: 100%;
+              position: absolute;
+              top: 0;
+              box-sizing: border-box;
+              border-radius: 4px;
+              z-index: 10;
+          }
 
-    function clearScene() {
-        var to_remove = [];
-        scene.traverse(function (child) {
-            to_remove.push(child);
-        });
-        for (var i = 0; i < to_remove.length; i++) {
-            scene.remove(to_remove[i]);
-        }
-    }
+          .tsne-group .image {
+              border: 1px solid rgba(0, 0, 0, 0.1);
+              border-radius: 4px;
+              box-shadow: 0 0 6px rgba(0, 0, 0, 0.08);
+              width: 150px;
+              padding-top: 150px;
+              background: white;
+              position: relative;
+              transition: border-color 0.3s, box-shadow 0.3s;
+              margin-right: 12px;
+          }
 
-    function drawUpdate(embedding) {
-        var newPos = [];
-        for (var i = 0; i < embedding.length; i++) {
-            // positions
-            var x = embedding[i][0];
-            var y = embedding[i][1];
-            var z = (lowdim == 3) ? embedding[i][2] : 0;
-            newPos.push(x, y, z);
-            if (lowdim == 3) {
-                stars[i].position.x = x;
-                stars[i].position.y = y;
-                stars[i].position.z = z;
-            }
-        }
-        if (lowdim == 2) {
-            points.geometry.attributes.position = new THREE.Float32BufferAttribute(newPos, 3);
-        }
-        renderer.render(scene, camera);
-    };
+          @media(min-width: 640px) {
+              .tsne-group .image {
+                  width: 100%;
+                  padding-top: 100%;
+                  margin-right: 0;
+              }
+          }
 
-    function stopWorker() {
-        worker.terminate();
-        worker = undefined;
-    }
+          .tsne-group .original .image {
+              box-shadow: none;
+          }
 
-    function rundraw() {
-        if (fileuploaded && update) {
-            if (firstRun == false) {
-                stopWorker();
-            }
-            firstRun = false;
-            stars = [];
-            points = null;
-            worker = new Worker('js/worker.js');
-            nIter = parseInt($('#param-maxiter').val());
-            clearScene();
-            count = 0;
-            N_SAMPLES = parseInt($('#param-nsamples').val());
-            var threeDModel = $('#3dModel').prop('checked');
-            lowdim = threeDModel ? 3 : 2;
-            worker.onmessage = function (e) {
-                var msg = e.data;
-                switch (msg.type) {
-                    case 'PROGRESS_STATUS':
-                        $('#progress-status').text(msg.data);
-                        break;
-                    case 'PROGRESS_ITER':
-                        break;
-                    case 'PROGRESS_DATA':
-                        drawCount++;
-                        drawUpdate(msg.data);
-                        break;
-                    case 'DONE':
-                        drawCount++;
-                        drawUpdate(msg.data);
-                        break;
-                    default:
-                }
-            }
-            draw(N_SAMPLES);
-            render();
+          .tsne-group .image img {
+              position: absolute;
+              top: 5%;
+              left: 5%;
+              width: 90%;
+          }
 
-            function render() {
-                orbitControls.update(clock.getDelta());
-                requestAnimationFrame(render);
-                if ((lowdim == 2) && (drawCount == 1)) {
-                    points.geometry.attributes.position.needsUpdate = true; // required after the first render
-                }
-                renderer.render(scene, camera)
-            }
-        }
-    }
+          .tsne-group h3.caption {
+              font-size: 15px;
+              margin-top: 12px;
+          }
 
-    $('#param-nsamples').bind('input', function () {
-        $('#param-nsample-value').text($('#param-nsamples').val());
-    });
-    $('#param-perplexity').bind('input', function () {
-        $('#param-perplexity-value').text($('#param-perplexity').val());
-    });
-    $('#param-earlyexag').bind('input', function () {
-        $('#param-earlyexag-value').text($('#param-earlyexag').val());
-    });
-    $('#param-learningrate').bind('input', function () {
-        $('#param-learningrate-value').text($('#param-learningrate').val());
-    });
-    $('#param-maxiter').bind('input', function () {
-        $('#param-maxiter-value').text($('#param-maxiter').val());
-    });
+          .tsne-group .caption {
+              font-size: 12px;
+              line-height: 1.6em;
+              margin-top: 12px;
+              width: 100px;
+          }
 
-
-    // this will be 2D coordinates of the current mouse position, [0,0] is middle of the screen.
-    var mouse = new THREE.Vector2();
-
-    var latestMouseProjection; // this is the latest projection of the mouse on object (i.e. intersection with ray)
-    var hoveredObj; // this objects is hovered at the moment
-
-    // tooltip will not appear immediately. If object was hovered shortly,
-    // - the timer will be canceled and tooltip will not appear at all.
-    var tooltipDisplayTimeout;
-
-    // This will move tooltip to the current mouse position and show it by timer.
-
-    function showTooltip() {
-        var divElement = $("#tooltip");
-
-        if (divElement && latestMouseProjection) {
-            divElement.css({
-                display: "block",
-                opacity: 0.0
-            });
-
-            var canvasHalfWidth = renderer.domElement.offsetWidth / 2;
-            var canvasHalfHeight = renderer.domElement.offsetHeight / 2;
-
-            var tooltipPosition = latestMouseProjection.clone().project(camera);
-            tooltipPosition.x = (tooltipPosition.x * canvasHalfWidth) + canvasHalfWidth + renderer.domElement.offsetLeft;
-            tooltipPosition.y = -(tooltipPosition.y * canvasHalfHeight) + canvasHalfHeight + renderer.domElement.offsetTop;
-
-            var tootipWidth = divElement[0].offsetWidth;
-            var tootipHeight = divElement[0].offsetHeight;
-
-            divElement.css({
-                left: `${tooltipPosition.x - tootipWidth / 2}px`,
-                top: `${tooltipPosition.y - tootipHeight - 5}px`
-            });
-
-            // var position = new THREE.Vector3();
-            // var quaternion = new THREE.Quaternion();
-            // var scale = new THREE.Vector3();
-            // hoveredObj.matrix.decompose(position, quaternion, scale);
-            divElement.text(hoveredObj.userData.tooltipText);
-
-            setTimeout(function () {
-                divElement.css({
-                    opacity: 1.0
-                });
-            }, 25);
-        }
-    }
-
-    // This will immediately hide tooltip.
-    function hideTooltip() {
-        var divElement = $("#tooltip");
-        if (divElement) {
-            divElement.css({
-                display: "none"
-            });
-        }
-    }
-
-    // Following two functions will convert mouse coordinates
-    function updateMouseCoords(event, coordsObj) {
-
-        var rect = renderer.domElement.getBoundingClientRect();
-        coordsObj.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        coordsObj.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-    }
-
-    function handleManipulationUpdate() {
-        raycaster.setFromCamera(mouse, camera);
-        var intersects = raycaster.intersectObjects(scene.children);
-        if (intersects.length > 0) {
-            latestMouseProjection = intersects[0].point;
-            hoveredObj = intersects[0].object;
-        }
-
-        if (tooltipDisplayTimeout || !latestMouseProjection) {
-            clearTimeout(tooltipDisplayTimeout);
-            tooltipDisplayTimeout = undefined;
-            hideTooltip();
-        }
-
-        if (!tooltipDisplayTimeout && latestMouseProjection) {
-            tooltipDisplayTimeout = setTimeout(function () {
-                tooltipDisplayTimeout = undefined;
-                showTooltip();
-            }, 330);
-        }
-    }
-
-    function onMouseMove(event) {
-        updateMouseCoords(event, mouse);
-
-        latestMouseProjection = undefined;
-        hoveredObj = undefined;
-        handleManipulationUpdate();
-    }
-
-    document.getElementById("webgl-output").addEventListener('click', onMouseMove, false);
-
-
-</script>
-<dt-appendix>
-    <style>
-        dt-appendix {
-            display: block;
-            font-size: 14px;
-            line-height: 24px;
-            margin-bottom: 0;
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
-            color: rgba(0, 0, 0, 0.5);
-            background: rgb(250, 250, 250);
-            padding-top: 36px;
-            padding-bottom: 60px;
-        }
-
-        dt-appendix h3 {
-            font-size: 16px;
-            font-weight: 500;
-            margin-top: 18px;
-            margin-bottom: 18px;
-            color: rgba(0, 0, 0, 0.65);
-        }
-
-        dt-appendix .citation {
-            font-size: 11px;
-            line-height: 15px;
-            border-left: 1px solid rgba(0, 0, 0, 0.1);
-            padding-left: 18px;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            background: rgba(0, 0, 0, 0.02);
-            padding: 10px 18px;
-            border-radius: 3px;
-            color: rgba(150, 150, 150, 1);
-            overflow: hidden;
-            margin-top: -12px;
-        }
-
-        dt-appendix .references {
-            font-size: 12px;
-            line-height: 20px;
-        }
-
-        dt-appendix a {
-            color: rgba(0, 0, 0, 0.6);
-        }
-
-        dt-appendix ol,
-        dt-appendix ul {
-            padding-left: 24px;
-        }
-    </style>
-    <dt-appendix>
-        <h3>Acknowledgments</h3>
-        <p>Authors: Wedad Anbtawi and Mohamed Nassar.
-        <p>This work was made possible by the support of the <a href="https://aub.edu.lb">American University of
-            Beirut</a>.</p>
-    </dt-appendix>
-    <div class="l-body">
-        <h3>References</h3>
-        <dt-bibliography>
-            <ol>
-                <li><b>Visualizing data using t-SNE</b>
-                    &ensp;<a href="http://www.jmlr.org/papers/volume9/vandermaaten08a/vandermaaten08a.pdf">[PDF]</a>
-                    <br>Maaten, L.v.d. and Hinton, G., 2008. Journal of Machine Learning Research, Vol 9(Nov), pp.
-                    2579—2605.
-                </li>
-            </ol>
-        </dt-bibliography>
-
-        <div id="tooltip"></div>
+          @media(min-width: 640px) {
+              .tsne-group .caption,
+              .tsne-group h3.caption {
+                  margin-top: 8px;
+                  width: 100%;
+              }
+          }
+      </style>
 
 
-        <style>
+      <style>
+          #tray-container {
+              width: 100%;
+              position: fixed;
+              top: 0;
+              left: 0;
+              z-index: 100;
+              top: -410px;
+              transition: top 0.3s;
+          }
+          #tray {
+              position: relative;
+              border: 2px solid steelblue;
+              background: white;
+              padding: 24px 24px 60px 24px;
+              box-shadow: 0px 2px 24px rgba(0, 0, 0, 0.2);
+              box-sizing: border-box;
+              margin: 0 auto;
+              height: 380px;
+              display: flex;
+              justify-content: center;
+              max-width: 500px;
+              border-radius: 4px;
+          }
 
-            #tooltip {
-                position: fixed;
-                left: 0;
-                top: 0;
-                min-width: 100px;
-                text-align: center;
-                padding: 5px 12px;
-                font-family: monospace;
-                background: #a0c020;
-                display: none;
-                opacity: 0;
-                border: 1px solid black;
-                box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.5);
-                transition: opacity 0.25s linear;
-                border-radius: 3px;
-            }
+          #tray-container.modal {
+              top: -4px;
+          }
 
-        </style>
+          #tray-content {
+              width: 100%;
+              height: 100%;
+              font-size: 12px;
+              position: relative;
+              top: -12px;
+          }
+          #tray-content canvas {
+              width: 100%;
+          }
 
-        <script src="js/scrollReveal.min.js"></script>
-        <script>
-            (function () {
-                window.sr = new scrollReveal({
-                    reset: true,
-                    mobile: true,
-                    vFactor: 0.2
-                });
-            })();
-        </script>
-</body>
+          #tray-options {
+              padding-left: 36px;
+              font-size: 13px;
+              line-height: 1.5em;
+              height: 100%;
+              width: 45%;
+          }
+          #tray-options #tray-controls {
+              margin-bottom: 24px;
+              display: flex;
+              align-items: center;
+          }
+          #tray-controls button {
+              cursor: pointer;
+              outline: none;
+              border-radius: 50%;
+              background: steelblue;
+              color: white;
+              width: 48px;
+              height: 48px;
+              border: none;
+              margin-right: 12px;
+          }
+          #tray-controls .play-pause i {
+              display: none;
+              font-size: 30px;
+          }
+          #tray-controls .play-pause.paused i:nth-child(1) {
+              display: block;
+          }
+          #tray-controls .play-pause.playing i:nth-child(2) {
+              display: block;
+          }
+          #tray-steps-display {
+              text-align: center;
+              width: 48px;
+              font-size: 15px;
+          }
+          #tray input {
+              margin-bottom: 12px;
+              margin-left: -2px;
+          }
+          #tray-data-sliders {
+          }
+          #tray-tsne-sliders {
+          }
+          #tray-close {
+              cursor: pointer;
+              outline: none;
+              background: white;
+              border: none;
+              text-align: center;
+              position: absolute;
+              bottom: 0;
+              width: 100%;
+              padding: 6px 0;
+              background: #f0f4f5;
+              opacity: 0.6;
+              color: steelblue;
+              left: 0;
+          }
+          #tray-close:hover {
+              opacity: 1;
+          }
+      </style>
+      <div id="tray-container">
+          <div id="tray">
+              <div id="tray-content" width="400" height="400">
+              </div>
+
+              <button id="tray-close"><i class="material-icons">expand_less</i></button>
+          </div>
+      </div>
+		<dt-appendix>
+		<style>
+		  dt-appendix {
+			display: block;
+			font-size: 14px;
+			line-height: 24px;
+			margin-bottom: 0;
+			border-top: 1px solid rgba(0,0,0,0.1);
+			color: rgba(0,0,0,0.5);
+			background: rgb(250, 250, 250);
+			padding-top: 36px;
+			padding-bottom: 60px;
+		  }
+		  dt-appendix h3 {
+			font-size: 16px;
+			font-weight: 500;
+			margin-top: 18px;
+			margin-bottom: 18px;
+			color: rgba(0,0,0,0.65);
+		  }
+		  dt-appendix .citation {
+			font-size: 11px;
+			line-height: 15px;
+			border-left: 1px solid rgba(0, 0, 0, 0.1);
+			padding-left: 18px;
+			border: 1px solid rgba(0,0,0,0.1);
+			background: rgba(0, 0, 0, 0.02);
+			padding: 10px 18px;
+			border-radius: 3px;
+			color: rgba(150, 150, 150, 1);
+			overflow: hidden;
+			margin-top: -12px;
+		  }
+		  dt-appendix .references {
+			font-size: 12px;
+			line-height: 20px;
+		  }
+		  dt-appendix a {
+			color: rgba(0, 0, 0, 0.6);
+		  }
+		  dt-appendix ol,
+		  dt-appendix ul {
+			padding-left: 24px;
+		  }
+		</style>
+		<dt-appendix>
+		  <h3>Acknowledgments</h3>
+		  <p>Authors: Wedad Anbtawi and Mohamed Nassar.
+		  <p>This work was made possible by the support of the <a href="https://aub.edu.lb">American University of Beirut</a>.</p>
+		</dt-appendix>
+		<div class="l-body">
+			<h3>References</h3>
+			<dt-bibliography>
+			<ol><li><b>Visualizing data using t-SNE</b>
+			  &ensp;<a href="http://www.jmlr.org/papers/volume9/vandermaaten08a/vandermaaten08a.pdf">[PDF]</a>
+			  <br>Maaten, L.v.d. and Hinton, G., 2008. Journal of Machine Learning Research, Vol 9(Nov), pp. 2579—2605. 
+			  </li>
+			  <li><b>How to Use t-SNE Effectively</b>
+			  &ensp;<a href="http://distill.pub/2016/misread-tsne">[Link]</a>
+			  <br>Wattenberg, et al., Distill, 2016. 
+			  </li></ol>
+		</dt-bibliography>
+		<style>
+		dt-cite {
+		  color: hsla(206, 90%, 20%, 0.7);
+		}
+		dt-cite .citation-number {
+		  cursor: default;
+		  white-space: nowrap;
+		  font-family: -apple-system, BlinkMacSystemFont, "Roboto", Helvetica, sans-serif;
+		  font-size: 75%;
+		  color: hsla(206, 90%, 20%, 0.7);
+		  display: inline-block;
+		  line-height: 1.1em;
+		  text-align: center;
+		  position: relative;
+		  top: -2px;
+		  margin: 0 2px;
+		}
+		figcaption dt-cite .citation-number {
+		  font-size: 11px;
+		  font-weight: normal;
+		  top: -2px;
+		  line-height: 1em;
+		}
+	  </style>
+      <script src="js/utils.js"></script>
+      <script src="js/profiles.js"></script>
+      <script src="js/appTsne.js"></script>
+      <script src="js/tray.js"></script>
+
+    </body>
 </html>
-
