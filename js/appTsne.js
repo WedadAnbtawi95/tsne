@@ -12,7 +12,7 @@ var count = 0;
 var paused = false;
 var steps = 200;
 var nbPoints = 8;
-var ratio = 1;
+var ratio = 0.65;
 var threeD = true;
 var profile = profiles['square'];
 var opt = {
@@ -23,8 +23,28 @@ var opt = {
 
 // Our Javascript will go here.
 function initPoints(nbPoints, opt, profile, threeDModel) {
+	if ((profile === profiles['sphere'])|| (profile === profiles['torus'])||(profile === profiles['tetrahedron'])){
+		read(nbPoints, profile, opt);
+	}	
+    else{
+		var points = profile.getPoints(nbPoints, threeDModel);
+		dists = distanceMatrix(points);
+		tsne = new tsnejs.tSNE(opt); // create a tSNE instance
+		tsne.initDataDist(dists);
+		for (var i = 0; i < points.length; i++) {
+			var color = points[i].color;
+			var material = new THREE.MeshBasicMaterial({color: color});
+			var mesh = new THREE.Mesh(cubesGeometry, material);
+			mesh.position.x = points[i].coords[0] * ratio;
+			mesh.position.y = points[i].coords[1] * ratio;
+			mesh.position.z = points[i].coords[2] * ratio;
+			stars.push(mesh);
+			scene.add(mesh);
+		}
+	}
 
-    var points = profile.getPoints(nbPoints, threeDModel);
+}
+function initPointsfromFile(points, opt) {
     dists = distanceMatrix(points);
     tsne = new tsnejs.tSNE(opt); // create a tSNE instance
     tsne.initDataDist(dists);
@@ -38,7 +58,40 @@ function initPoints(nbPoints, opt, profile, threeDModel) {
         stars.push(mesh);
         scene.add(mesh);
     }
-
+}
+function read(nbPoints, profile, opt){
+	if(profile === profiles['sphere']){
+		d3.text("data/sphere.csv", function(text) {
+			var countrow = 0;
+			var data = [];
+			d3.csvParseRows(text).map(function(row) {
+				countrow++;
+				if (countrow <= nbPoints) data.push(row.slice(1).map(function(value) {
+					return +value;
+				}));
+			});
+			initPointsfromFile(makePoints(data), opt);
+		});
+	}
+	else{
+		if (profile === profiles['torus']){
+			path = "data/torus.csv";
+		}
+		else{
+			path = "data/tetrahedron.csv";
+		}
+		d3.text(path, function(text) {
+			var countrow = 0;
+			var data = [];
+			d3.csvParseRows(text).map(function(row) {
+				countrow++;
+				if (countrow <= nbPoints) data.push(row.map(function(value) {
+					return +value;
+				}));
+			});
+			initPointsfromFile(makePoints(data), opt);
+		});
+	}
 }
 
 function initScene() {
@@ -69,11 +122,10 @@ var animate = function () {
             return new Point(coords);
         });
 
-
         for (var iterator = 0; iterator < solution.length; iterator++) {
             stars[iterator].position.x = solution[iterator].coords[0] * ratio;
             stars[iterator].position.y = solution[iterator].coords[1] * ratio;
-            stars[iterator].position.z = solution[iterator].coords[2];
+            stars[iterator].position.z = solution[iterator].coords[2] * ratio;
         }
     }
 
@@ -95,6 +147,7 @@ function onParamsChange() {
     pointsPerSide = (pointsPerSide > 8 && profile === profiles['square']) ? 8 : pointsPerSide;
     pointsPerSide = (pointsPerSide < 20 && !(profile === profiles['square'])) ? 20 : pointsPerSide;
     pointsPerSide = (pointsPerSide < 35 && profile === profiles['trefoil']) ? 35 : pointsPerSide;
+	pointsPerSide = (pointsPerSide > 200 && (profile === profiles['sphere'])) ? 200 : pointsPerSide;
     var threeDModel = true;
     $('#data-options > span.slider-value-Points').text(pointsPerSide);
     $('#tsne-options > span.slider-value-Perplexity').text(perplexity);

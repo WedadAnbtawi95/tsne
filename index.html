@@ -299,6 +299,18 @@ and open the template in the editor.
                         <canvas width="150" height="150"></canvas>
                         <span>Two Clusters</span>
                     </div>
+					<div class="demo-data" data-type="sphere">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Sphere</span>
+                    </div>
+					<div class="demo-data" data-type="torus">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Torus</span>
+                    </div>
+					<div class="demo-data" data-type="tetrahedron">
+                        <canvas width="150" height="150"></canvas>
+                        <span>Tetrahedron</span>
+                    </div>
                 </div>
 
                 <div id="data-details">
@@ -346,6 +358,9 @@ and open the template in the editor.
       <img id="twoClusters" src="images/twoClusters.png" style="display: none">
       <img id="trefoil" src="images/trefoil.png" style="display: none">
       <img id="subsetClusters" src="images/subsetClusters.png" style="display: none">
+	  <img id="sphere" src="images/sphere.png" style="display: none">
+	  <img id="torus" src="images/torus.png" style="display: none">
+	  <img id="tetrahedron" src="images/tetrahedron.png" style="display: none">
 	  <!--***********************-->
       <h2>1. Perplexity really matters</h2>
       <p>Since t-SNE results depend on the user-defined parameters, different perlexity values can give different results. As mentioned before, perplexity represents the number of nearest neighbors, so its value depends on the size of the dataset. It was recommended by van der Maaten & Hinton to choose perplexity value from the range 5 to 50. The diagrams below show t-SNE plots for five different perplexity values.</p>
