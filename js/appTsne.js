@@ -61,37 +61,25 @@ function initPointsfromFile(points, opt) {
 }
 function read(nbPoints, profile, opt){
 	if(profile === profiles['sphere']){
-		d3.text("data/sphere.csv", function(text) {
-			var countrow = 0;
-			var data = [];
-			d3.csvParseRows(text).map(function(row) {
-				countrow++;
-				if (countrow <= nbPoints) data.push(row.slice(1).map(function(value) {
-					return +value;
-				}));
-			});
-			initPointsfromFile(makePoints(data), opt);
-		});
+		path = "data/sphere.csv";
+	}
+	else if (profile === profiles['torus']){
+		path = "data/torus.csv";
 	}
 	else{
-		if (profile === profiles['torus']){
-			path = "data/torus.csv";
-		}
-		else{
-			path = "data/tetrahedron.csv";
-		}
-		d3.text(path, function(text) {
-			var countrow = 0;
-			var data = [];
-			d3.csvParseRows(text).map(function(row) {
-				countrow++;
-				if (countrow <= nbPoints) data.push(row.map(function(value) {
-					return +value;
-				}));
-			});
-			initPointsfromFile(makePoints(data), opt);
-		});
+		path = "data/tetrahedron.csv";
 	}
+	d3.text(path, function(text) {
+		var countrow = 0;
+		var data = [];
+		d3.csvParseRows(text).map(function(row) {
+			countrow++;
+			if (countrow <= nbPoints) data.push(row.map(function(value) {
+				return +value;
+			}));
+		});
+		initPointsfromFile(makePoints(data), opt);
+	});
 }
 
 function initScene() {
@@ -148,6 +136,7 @@ function onParamsChange() {
     pointsPerSide = (pointsPerSide < 20 && !(profile === profiles['square'])) ? 20 : pointsPerSide;
     pointsPerSide = (pointsPerSide < 35 && profile === profiles['trefoil']) ? 35 : pointsPerSide;
 	pointsPerSide = (pointsPerSide > 200 && (profile === profiles['sphere'])) ? 200 : pointsPerSide;
+	pointsPerSide = (pointsPerSide < 50 && ((profile === profiles['sphere'])|| (profile === profiles['torus'])||(profile === profiles['tetrahedron']))) ? 50 : pointsPerSide;
     var threeDModel = true;
     $('#data-options > span.slider-value-Points').text(pointsPerSide);
     $('#tsne-options > span.slider-value-Perplexity').text(perplexity);
