@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>t-SNE ThreeJS</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link href="../material-icons.css" rel="stylesheet">
+        <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+        <script src="../js/tsne.js"></script>
+        <script src="../js/three.js"></script>
+        <script src="../js/orbit.js"></script>
+        <script src="../js/d3.min.js"></script>
+
+    </head>
+    <body>
+	  			<div class="selectWrapper">
+					    <select id="selectShape" onchange="readOurData();"/>
+						 <option value='empty'></option>
+						  <option value='sphere'>Sphere</option>
+						  <option value='torus'>Torus</option>
+						  <option value='tetrahedron'>Tetrahedron</option>
+						</select>
+				</div>
+        <div class="l-page" style="overflow: hidden;">
+            <style>
+                #playground3D {
+					float: left;
+                    font-family: 'Open Sans', sans-serif;
+                    z-index: 1000;
+					width: 35%
+                }
+
+                #playground3D * {
+                    box-sizing: border-box;
+                }
+
+                #playground3D.modal {
+                    position: fixed;
+                    left: 10px;
+                    top: 50px;
+                }
+                #playground2D {
+					float: left;
+                    font-family: 'Open Sans', sans-serif;
+                    z-index: 1000;
+					width: 65%
+                }
+
+                #playground2D * {
+                    box-sizing: border-box;
+                }
+
+                #playground2D.modal {
+                    position: fixed;
+                    left: 10px;
+                    top: 0px;
+                }
+
+                /* Playground Canvas */
+                #playground-canvas3d {
+                    float: left;
+                }
+
+				#playground-canvas2d {
+                    float: left;
+                }
+
+                #playground-canvas2d canvas {
+                    width: 50%;
+                }
+
+                /* Data Details */
+                #data-details {
+                    position: relative;
+					top: 50px;
+                }
+
+                @media(min-width: 768px) {
+                    #data-details {
+                        width: 35%;
+                        float: right;
+                    }
+                }
+
+                #data-details #data-controls {
+                    width: 35%;
+                    float: right;
+                    position: relative;
+                    overflow: hidden;
+                    font-size: 13px;
+                }
+
+                @media(min-width: 768px) {
+                    #data-details #data-controls {
+                        width: 50%;
+                        margin-right: 10%;
+                        float: left;
+                    }
+                }
+
+                #data-details #play-controls {
+                    margin-bottom: 18px;
+                    overflow: hidden;
+                    position: relative;
+                }
+                #data-details #play-controls button {
+                    cursor: pointer;
+                    outline: none;
+                    border-radius: 50%;
+                    background: steelblue;
+                    color: white;
+                    width: 25%;
+                    margin-right: 5%;
+                    padding-top: 25%;
+                    padding-bottom: 0;
+                    border: none;
+                    float: left;
+                    position: relative;
+                }
+                #play-controls i {
+                    display: block;
+                    position: absolute;
+                    top: 50%;
+                    left: 0;
+                    width: 100%;
+                    height: 36px;
+                    font-size: 24px;
+                    line-height: 0;
+                }
+                @media(min-width: 768px) {
+                    #play-controls i {
+                        font-size: 30px;
+                    }
+                }
+                #play-controls #play-pause i {
+                    display: none;
+                    position: absolute;
+                }
+                #play-controls #play-pause.paused i:nth-child(1) {
+                    display: block;
+                }
+                #play-controls #play-pause.playing i:nth-child(2) {
+                    display: block;
+                }
+
+                #steps-display {
+                    float: left;
+                    text-align: center;
+                    width: 25%;
+                    line-height: 1.5em;
+                    font-size: 13px;
+                }
+
+                @media(min-width: 1024px) {
+                    #steps-display {
+                        font-size: 16px;
+                        line-height: 1.6em;
+                    }
+                }
+
+
+                /* Options */
+                #data-details #options {
+                    float: left;
+                    padding-left: 36px;
+                    font-size: 13px;
+                    line-height: 1.5em;
+                    width: 45%;
+                }
+                #data-details input {
+                    display: block;
+                    width: 100%;
+                    margin: 8px 0 16px 0;
+                }
+
+                #options #data-options {
+                    width: 45%;
+                    margin-left: 4px;
+                }
+                #options #tsne-options {
+                    width: 45%;
+                    margin-left: 4px;
+                }
+
+                #data-details #share {
+                    margin-top: 8px;
+                    display: block;
+                    color: rgba(0, 0, 0, 0.4);
+                    text-decoration: none;
+                    font-size: 12px;
+                }
+
+                #data-details #share:hover {
+                    text-decoration: underline;
+                }
+
+                #data-details #share i {
+                    line-height: 0px;
+                    position: relative;
+                    top: 7px;
+                }
+
+            </style>
+            <div id="playground3D">
+
+                <div id="playground-canvas3d" style="width: 100%; border: solid #eee;">
+
+                </div>
+            </div>
+			<div id="playground2D">
+				<div id="playground-canvas2d" style="width: 60%; border: solid #eee;">
+
+                </div>
+
+                <div id="data-details">
+                    <div id="data-controls">
+                        <div id="play-controls">
+                            <button id="play-pause" class="playing" onclick="playPause()"><i class="material-icons">play_arrow</i><i class="material-icons">pause</i></button>
+                            <button id="restart" onclick="reset()"><i class="material-icons">refresh</i></button>
+                            <div id="steps-display">
+                                Step<br><span id="step">5,000</span>
+                            </div>
+                        </div>
+                        <div id="data-options">
+                            <span class="slider-label-Points Per Side">Steps </span>
+                            <span class="steps-value-Points Per Side">200</span>
+                            <input type="range" min="200" max="5000" value="200" id="steps" onchange="onParamsChange()">
+                        </div>
+                        <div id="tsne-options">
+                            <span class="slider-label-Perplexity">Perplexity </span>
+                            <span class="slider-value-Perplexity">30</span><input type="range" min="2" max="50" value="30" id="perplexity" onchange="onParamsChange()">
+                            <span class="slider-label-Epsilon">Epsilon </span><span class="slider-value-Epsilon">5</span>
+                            <input type="range" min="1" max="20" value="5" id="epsilon" onchange="onParamsChange()"></div>
+						</div>
+                </div>
+            </div>
+        </div>
+      <script src="../js/utils.js"></script>
+      <script src="js/applyTsne.js"></script>
+    </body>
+</html>

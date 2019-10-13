@@ -26,14 +26,5 @@ var profiles = {
     trefoil: {
         getPoints: trefoilData,
         description: 'Points giving a trefoil knot topology in 3D. Different perplexity values will give different result.'
-    },
-	sphere: {
-		description: 'A sphere with originally equal spacing between points passed to t-SNE.'
-	},
-	torus: {
-		description: 'A torus with originally equal spacing between points passed to t-SNE.'
-	},
-	tetrahedron: {
-		description: 'A tetrahedron with originally equal spacing between points passed to t-SNE.'
-	}
+    }
 }

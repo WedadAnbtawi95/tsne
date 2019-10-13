@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>t-SNE ThreeJS</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link href="../material-icons.css" rel="stylesheet">
+        <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+        <script src="../js/tsne.js"></script>
+        <script src="../js/three.js"></script>
+        <script src="../js/orbit.js"></script>
+        <script src="../js/d3.min.js"></script>
+		<script type="text/javascript" src="../js/underscore.js"></script>
+		<script type="text/javascript" src="../js/Trendy.js"></script>
+    </head>
+    <body>
+	  <div id="user-data">
+		<style>
+			#user-data{
+				float: left;
+				display: block;
+                width: 50%;
+				margin: 8px 0 16px 0;
+                font-size: 16px;
+				line-height: 1.5em;
+			}
+			#samples_number {
+                width: 45%;
+                margin-left: 4px;
+            }
+		</style>
+			  <input type="file" name="file" id="filechoice" onchange="checkfile(this);" />
+		</div>
+        <div class="l-page" style="overflow: hidden; width: 100%;">
+            <style>
+                #playground3D {
+					float: left;
+                    font-family: 'Open Sans', sans-serif;
+                    z-index: 1000;
+					width: 50%
+                }
+
+                #playground3D * {
+                    box-sizing: border-box;
+                }
+
+                #playground3D.modal {
+                    position: fixed;
+                    left: 10px;
+                    top: 50px;
+                }
+                #playground2D {
+					float: left;
+                    font-family: 'Open Sans', sans-serif;
+                    z-index: 1000;
+					width: 50%
+                }
+
+                #playground2D * {
+                    box-sizing: border-box;
+                }
+
+                #playground2D.modal {
+                    position: fixed;
+                    left: 10px;
+                    top: 0px;
+                }
+
+                /* Playground Canvas */
+                #playground-canvas3d {
+                    float: left;
+                }
+
+				#playground-canvas2d {
+                    float: left;
+                }
+
+                #playground-canvas2d canvas {
+                    width: 50%;
+                }
+
+                /* Data Details */
+                #data-details {
+                    position: relative;
+					top: 50px;
+                }
+
+                @media(min-width: 768px) {
+                    #data-details {
+                        width: 35%;
+                        float: right;
+                    }
+                }
+
+                #data-details #data-controls {
+                    width: 35%;
+                    float: right;
+                    position: relative;
+                    overflow: hidden;
+                    font-size: 13px;
+                }
+
+                @media(min-width: 768px) {
+                    #data-details #data-controls {
+                        width: 85%;
+                        margin-right: 10%;
+                        float: left;
+                    }
+                }
+                #steps-display {
+                    float: left;
+                    text-align: center;
+                    width: 25%;
+                    line-height: 1.5em;
+                    font-size: 13px;
+                }
+
+                @media(min-width: 1024px) {
+                    #steps-display {
+                        font-size: 16px;
+                        line-height: 1.6em;
+                    }
+                }
+
+
+                /* Options */
+                #data-details #options {
+                    float: left;
+                    padding-left: 36px;
+                    font-size: 13px;
+                    line-height: 1.5em;
+                    width: 45%;
+                }
+                #data-details input {
+                    display: block;
+                    width: 100%;
+                    margin: 8px 0 16px 0;
+                }
+
+                #options #data-options {
+                    width: 45%;
+                    margin-left: 4px;
+                }
+                #options #tsne-options {
+                    width: 45%;
+                    margin-left: 4px;
+                }
+				#progress {
+				  text-align: left;
+				  line-height: 1.5em;
+				  font-family: 'Inconsolata', monospace;
+				  color: blue;
+				  font-size: 12px;
+				}
+
+                #data-details #share {
+                    margin-top: 8px;
+                    display: block;
+                    color: rgba(0, 0, 0, 0.4);
+                    text-decoration: none;
+                    font-size: 12px;
+                }
+
+                #data-details #share:hover {
+                    text-decoration: underline;
+                }
+
+                #data-details #share i {
+                    line-height: 0px;
+                    position: relative;
+                    top: 7px;
+                }
+
+            </style>
+            <div id="playground3D">
+				<h3 "style:width: 100%;">3D Visualization of t-SNE</h3>
+                <div id="playground-canvas3d" style="width: 60%; border: solid #eee;">
+
+                </div>
+
+                <div id="data-details">
+                    <div id="data-controls">
+                        <div id="data-options">
+                            <span class="slider-label-steps3d">Steps </span>
+                            <span class="steps-value-Points3d">200</span>
+                            <input type="range" min="100" max="1000" value="200" id="steps3d" onchange="onParamsChange3d()">
+                        </div>
+                        <div id="tsne-options">
+                            <span class="slider-label-Perplexity3d">Perplexity </span>
+                            <span class="slider-value-Perplexity3d">30</span><input type="range" min="2" max="50" value="30" id="perplexity3d" onchange="onParamsChange3d()">
+							<span class="slider-label-earlyExaggeration3d">Early Exaggeration </span>
+                            <span class="slider-value-earlyExaggeration3d">5</span><input type="range" min="1" max="50" value="5" id="earlyExaggeration3d" onchange="onParamsChange3d()">
+                            <span class="slider-label-Epsilon3d">Epsilon </span><span class="slider-value-Epsilon3d">5</span>
+                            <input type="range" min="1" max="20" value="5" id="epsilon3d" onchange="onParamsChange3d()"></div>
+						</div>
+						<div id="progress">
+						  <div><span id="progress-status3d"></span></div>
+						  <div id="iter3d" style="display:none;">Iteration: <span id="progress-iter3d"></span></div>
+						  <div id="error3d" style="display:none;">Error: <span id="progress-error3d"></span></div>
+						  <div id="gradnorm3d" style="display:none;">Gradient vector norm: <span id="progress-gradnorm3d"></span></div>
+						</div>
+                </div>
+            </div>
+			<div id="playground2D">
+				<h3 "style:width: 100%;">2D Visualization of t-SNE</h3>
+				<div id="playground-canvas2d" style="width: 60%; border: solid #eee;">
+
+                </div>
+
+                <div id="data-details">
+                    <div id="data-controls">
+                        <div id="data-options">
+                            <span class="slider-label-steps2d">Steps </span>
+                            <span class="steps-value-Points2d">200</span>
+                            <input type="range" min="100" max="1000" value="200" id="steps2d" onchange="onParamsChange2d()">
+                        </div>
+                        <div id="tsne-options">
+                            <span class="slider-label-Perplexity2d">Perplexity </span>
+                            <span class="slider-value-Perplexity2d">30</span><input type="range" min="2" max="50" value="30" id="perplexity2d" onchange="onParamsChange2d()">
+							<span class="slider-label-earlyExaggeration2d">Early Exaggeration </span>
+                            <span class="slider-value-earlyExaggeration2d">5</span><input type="range" min="1" max="50" value="5" id="earlyExaggeration2d" onchange="onParamsChange2d()">
+                            <span class="slider-label-Epsilon2d">Epsilon </span><span class="slider-value-Epsilon2d">5</span>
+                            <input type="range" min="1" max="20" value="5" id="epsilon2d" onchange="onParamsChange2d()"></div>
+						</div>
+						<div id="progress">
+						  <div><span id="progress-status2d"></span></div>
+						  <div id="iter2d" style="display:none;">Iteration: <span id="progress-iter2d"></span></div>
+						  <div id="error2d" style="display:none;">Error: <span id="progress-error2d"></span></div>
+						  <div id="gradnorm2d" style="display:none;">Gradient vector norm: <span id="progress-gradnorm2d"></span></div>
+						</div>
+                </div>
+            </div>
+        </div>
+      <script src="../js/utils.js"></script>
+      <script src="js/appTsne.js"></script>
+
+    </body>
+</html>

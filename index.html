@@ -812,10 +812,7 @@ and open the template in the editor.
               </div>
           </div>
       </div>
-	  <hr>
-	  <h2> Conclusion </h2>
-	  <p>t-SNE is now considered one of the top  dimensionality-reduction algorithms. It is a very flexible and user interactive tool. But some of its limits are its computational complexity and the importance of trying many values of parameters to get good results.</p>
-      <!--dont touch this-->
+	
       <style>
 
           .tsne-group {
@@ -1093,6 +1090,30 @@ and open the template in the editor.
               <button id="tray-close"><i class="material-icons">expand_less</i></button>
           </div>
       </div>
+      <script src="js/utils.js"></script>
+      <script src="js/profiles.js"></script>
+      <script src="js/appTsne.js"></script>
+      <script src="js/tray.js"></script>    
+      <h2>5. The desired low dimensions</h2>
+      <p>Although t-SNE results are affected by the user-defined parameters discussed above, there is still a condition that affects the results which is the desired low dimension. In this section, we provide an option for the users to upload their own data and find the difference between the results in 3D and 2D.
+		For some datasets we have used for testing, the clusters in 2D weren't clear depending on some parameters and number of samples while they were clear in 3D. One example can be that two clusters that are close to each other, can look as if they are the same cluster with different colors, but in 3D while moving the camera around, it can be shown that they are separated.</p>
+	<p>Having some results where 3D was better than 2D doesn't mean that 3D is always better. For some datasets, 3D was getting more error rates than 2D. The answer to which low dimension to choose is "it depends". Depending on the data and parameters chosen.</p><style>
+            iframe {
+                background: #fff;
+                display: block;       /* iframes are inline by default */
+                border: none;         /* Reset default border */
+                width: 98vw;
+                height: 95vh;
+				border: 1px solid lightgrey;
+            }
+	</style>
+	<iframe src="../3dvs2d/index.html" scrolling="no"></iframe>
+	  <h2>6. Going from high dimension to low dimension, will it preserve the shape?</h2>
+      <p>t-SNE is known that it preserve the local structure of the data, but that doesn't mean that you will get the same info. To test this, we provide below an option which will display the data in high dimension, in our case it's 3D, and next to it the output of inverting it to low dimension, 2D, using t-SNE. </p>
+	  <p>For some parameters, it was hard to guess what was the shape in high dimension. The sphere wasn't presented by at least a circle which is close to 2D projection of sphere, also for the another shapes like torus and tetrahedron. User should try many parameters which can even reach perplexity value 1000 to get the closest shape in 2D.</p>
+        <iframe src="../3dto2dtsne/index.html"  scrolling="no"></iframe>
+    <h2> Conclusion </h2>
+	  <p>t-SNE is now considered one of the top  dimensionality-reduction algorithms. It is a very flexible and user interactive tool. But some of its limits are its computational complexity and the importance of trying many values of parameters to get good results. Also the desired low dimension plays an important role in the result of t-SNE.</p>
 		<dt-appendix>
 		<style>
 		  dt-appendix {
@@ -1179,10 +1200,5 @@ and open the template in the editor.
 		  line-height: 1em;
 		}
 	  </style>
-      <script src="js/utils.js"></script>
-      <script src="js/profiles.js"></script>
-      <script src="js/appTsne.js"></script>
-      <script src="js/tray.js"></script>
-
     </body>
 </html>
