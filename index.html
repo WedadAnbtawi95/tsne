@@ -345,9 +345,11 @@ and open the template in the editor.
         </div>
 		<p>Data visualization is an important tool to understand and interpret the data in many different areas. Having high dimensional datasets will make it difficult to visualize the data. In order to visualize high dimensional data, we need first to apply dimensionality reduction. Dimensionality reduction converts data from a high dimensional representation into a low dimensional one that can be visualized. One of the important available techniques is t-distributed stochastic neighbor embedding (t-SNE). t-SNE is first proposed by <dt-cite key="maaten2008visualizing"><span id="citation-0" data-hover-ref="dt-cite-hover-box-0">van der Maaten and Hinton in 2008 <span class="citation-number">[1]</span></span></dt-cite>.</p>
 
-	<p>This technique is a user-interactive technique where the output will depend on the parameters given by the user. The first parameter is “perplexity which represents the effective number of neighbors considered for each data point. Different perplexity values can give different visualizations with different structures.” Another user-defined parameter is the “epsilon” which represents the learning rate in the algorithm. Usually, epsilon is in the range between 10 and 1000 and the user should try different values to get into the good results.</p>
-
-	<p>In this page, we resume the work started at <dt-cite key="distill"><span id="citation-0" data-hover-ref="dt-cite-hover-box-0">"<a href="https://distill.pub/2016/misread-tsne/">How to Use t-SNE Effectively</a>" <span class="citation-number">[2]</span></span></dt-cite> about how to interpret t-SNE plots, but in 3D. We estimate that 3D plots equipped with a camera may give better insights and quality of experience to the end-user. To this end, we use the threeJS library.</p>
+	<p>This technique is a user-interactive technique where the output will depend on the parameters given by the user.
+The first parameter is perplexity which represents the number of neighbors considered for each data point.
+Different perplexity values can give different visualizations with different structures.” Another user-defined parameter is the “epsilon” which represents the learning rate in the algorithm.
+Usually, epsilon is in the range between 10 and 1000 and the user should try different values to get into the good results.</p>
+	<p>On this page, we resume the work started at <dt-cite key="distill"><span id="citation-0" data-hover-ref="dt-cite-hover-box-0">"<a href="https://distill.pub/2016/misread-tsne/">How to Use t-SNE Effectively</a>" <span class="citation-number">[2]</span></span></dt-cite> about how to interpret t-SNE plots, but in 3D. We estimate that 3D plots equipped with a camera may give better insights and quality of experience to the end-user. To this end, we use the threeJS library.</p>
 	<p>In addition to using these templates, you can upload your own data to "<a href="https://wedadanbtawi95.github.io/tsneVisualization/">Interactive t-SNE</a>".</p>
 	  <hr>
 
@@ -363,7 +365,7 @@ and open the template in the editor.
 	  <img id="tetrahedron" src="images/tetrahedron.png" style="display: none">
 	  <!--***********************-->
       <h2>1. Perplexity really matters</h2>
-      <p>Since t-SNE results depend on the user-defined parameters, different perlexity values can give different results. As mentioned before, perplexity represents the number of nearest neighbors, so its value depends on the size of the dataset. It was recommended by van der Maaten & Hinton to choose perplexity value from the range 5 to 50. The diagrams below show t-SNE plots for five different perplexity values.</p>
+      <p>Since t-SNE results depend on the user-defined parameters, different perplexity values can give different results. As mentioned before, perplexity represents the number of nearest neighbors, so its value depends on the size of the dataset. It was recommended by van der Maaten & Hinton to choose perplexity value from the range of 5 to 50. The diagrams below show t-SNE plots for five different perplexity values.</p>
       <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
           <div class="original">
               <div class="image">
@@ -426,7 +428,7 @@ and open the template in the editor.
               </div>
           </div>
       </div>
-		<p>Each diagram shows different result of 50 data points caused by different perplexity value. Going out of the suggested range, i.e. outside (5,50), t-SNE results become less explainable. With perplexity 2, clusters aren't clearly separated. At perplexity 80, which is more than the number of data points, t-SNE isn't working prpoerly and the clusters are about to merge.</p>
+		<p>Each diagram shows a different result of 50 data points caused by a different perplexity value. Going out of the suggested range, i.e. outside (5,50), t-SNE results become less explainable. With perplexity 2, clusters aren't clearly separated. At perplexity 80, which is more than the number of data points, t-SNE isn't working properly and the clusters are about to merge.</p>
 		<p>We can see that at perplexity 50, the clusters are very clear and it  gives a good sense of the global geometry, but does that mean that we should use only perplexity 50? The answer is NO, perplexity depends on the number of samples. In the above diagrams, we used 50 points so as testing we used 500 points in the below five diagrams to check if the best perplexity is still at 50.  </p>
       <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
           <div class="original">
@@ -493,7 +495,7 @@ and open the template in the editor.
 	  <p> Now, none of the trial perplexity values gives a good sense of the global geometry. There may not be one perplexity value that will capture distances across all clusters but the user should try many values to get into the right one.
 
       <h2>2. Number of iterations and good result</h2>
-      <p>t-SNE goal is to minimize the difference in similarity between points in high dimensional space and the desired low dimensional space, but when should we stop? should the number of iterations be infinite? We can't use a very big number of iterations, we should keep iterating until reaching stability in the result because at some step the points won't keep moving much.</p>
+      <p>The t-SNE goal is to minimize the difference in similarity between points in high dimensional space and the desired low dimensional space, but when should we stop? should the number of iterations be infinite? We can't use a very big number of iterations, we should keep iterating until reaching stability in the result because at some step the points won't keep moving much.</p>
       <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
           <div class="original">
               <div class="image">
@@ -556,10 +558,10 @@ and open the template in the editor.
               </div>
           </div>
       </div>
-		<p>The images above show five different runs at perplexity 30. It is obvious that after 200 steps, the clusters become clearly separate and the convergence is reached. Unfortunately, the number of iterations required differ from a data set to another.</p>
+		<p>The images above show five different runs at perplexity 30. It is obvious that after 200 steps, the clusters become clearly separate and the convergence is reached. Unfortunately, the number of iterations required differs from a data set to another.</p>
 
 	    <h2>3. Learning rate (epsilon) really matter</h2>
-      <p>A second parameter in t-SNE is the learning rate which is mentioned as “epsilon”. This parameter control the movement of the points, so it is difficult to decide if a large or a small value is needed before running the algorithm with random values. The below five diagrams show how different epsilon values will lead to different results.</p>
+      <p>The second parameter in t-SNE is the learning rate which is mentioned as “epsilon”. This parameter controls the movement of the points, so it is difficult to decide if a large or a small value is needed before running the algorithm with random values. The five diagrams below show how different epsilon values will lead to different results.</p>
       <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
           <div class="original">
               <div class="image">
@@ -623,7 +625,7 @@ and open the template in the editor.
           </div>
       </div>
 	  <h2>4. More plots may be needed for topology</h2>
-	  <p>Depending on the parameters mentioned before, perlexity and epsilon, t-SNE plot can sometimes output topology shapes. One of the topological properties illustrated by <dt-cite key="distill"><span id="citation-0" data-hover-ref="dt-cite-hover-box-0">"<a href="https://distill.pub/2016/misread-tsne/">How to Use t-SNE Effectively</a>" <span class="citation-number">[2]</span></span></dt-cite> is containment. The plots below show two groups of 200 points in 50 dimensional space. Both are sampled from symmetric Gaussian distributions centered at the origin, but one is 50 times more tightly dispersed than the other. The “small” distribution is in effect contained in the large one.
+	  <p>Depending on the parameters mentioned before, perplexity and epsilon, the t-SNE plot can sometimes output topology shapes. One of the topological properties illustrated by <dt-cite key="distill"><span id="citation-0" data-hover-ref="dt-cite-hover-box-0">"<a href="https://distill.pub/2016/misread-tsne/">How to Use t-SNE Effectively</a>" <span class="citation-number">[2]</span></span></dt-cite> is containment. The plots below show two groups of 200 points in 50-dimensional space. Both are sampled from symmetric Gaussian distributions centered at the origin, but one is 50 times more tightly dispersed than the other. The “small” distribution is in effect contained in the large one.
 	  <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
           <div class="original">
               <div class="image">
@@ -1110,10 +1112,10 @@ and open the template in the editor.
 	<iframe src="../3dvs2d/index.html" scrolling="no"></iframe>
 	  <h2>6. Going from high dimension to low dimension, will it preserve the shape?</h2>
       <p>t-SNE is known that it preserve the local structure of the data, but that doesn't mean that you will get the same info. To test this, we provide below an option which will display the data in high dimension, in our case it's 3D, and next to it the output of inverting it to low dimension, 2D, using t-SNE. </p>
-	  <p>For some parameters, it was hard to guess what was the shape in high dimension. The sphere wasn't presented by at least a circle which is close to 2D projection of sphere, also for the another shapes like torus and tetrahedron. User should try many parameters which can even reach perplexity value 1000 to get the closest shape in 2D.</p>
+	  <p>For some parameters, it was hard to guess what was the shape in the high dimension. The sphere wasn't presented by at least a circle which is close to the 2D projection of the sphere, also for the other shapes like torus and tetrahedron. User should try many parameters which can even reach perplexity value 1000 to get the closest shape in 2D.</p>
         <iframe src="../3dto2dtsne/index.html"  scrolling="no"></iframe>
     <h2> Conclusion </h2>
-	  <p>t-SNE is now considered one of the top  dimensionality-reduction algorithms. It is a very flexible and user interactive tool. But some of its limits are its computational complexity and the importance of trying many values of parameters to get good results. Also the desired low dimension plays an important role in the result of t-SNE.</p>
+	  <p>t-SNE is now considered one of the top  dimensionality-reduction algorithms. It is a very flexible and user interactive tool. But some of its limits are its computational complexity and the importance of trying many values of parameters to get good results. Also, the desired low dimension plays an important role in the result of t-SNE.</p>
 		<dt-appendix>
 		<style>
 		  dt-appendix {
