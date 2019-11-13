@@ -624,7 +624,9 @@ Usually, epsilon is in the range between 10 and 1000 and the user should try dif
               </div>
           </div>
       </div>
-	  <h2>4. More plots may be needed for topology</h2>
+	  <h2>4. Early Exaggeration matters too</h2>
+      <p>Another user-defined parameter for t-SNE is the early exaggeration parameter. This parameter is optional. It controls the distance between the points and the initial space between the clusters in the original dimension. Its task is to multiply the high dimensional data probabilities by a fixed value during the first stages of optimization. Large values will make the space between the clusters originally larger. The best value for early exaggeration can’t be defined, i.e. the user should try many values and if the cost function increases during initial optimization, the early exaggeration value should be reduced.</p>
+	  <h2>5. More plots may be needed for topology</h2>
 	  <p>Depending on the parameters mentioned before, perplexity and epsilon, the t-SNE plot can sometimes output topology shapes. One of the topological properties illustrated by <dt-cite key="distill"><span id="citation-0" data-hover-ref="dt-cite-hover-box-0">"<a href="https://distill.pub/2016/misread-tsne/">How to Use t-SNE Effectively</a>" <span class="citation-number">[2]</span></span></dt-cite> is containment. The plots below show two groups of 200 points in 50-dimensional space. Both are sampled from symmetric Gaussian distributions centered at the origin, but one is 50 times more tightly dispersed than the other. The “small” distribution is in effect contained in the large one.
 	  <div class="l-page-outset tsne-group" id="figures-01" data-id="01">
           <div class="original">
@@ -1096,7 +1098,7 @@ Usually, epsilon is in the range between 10 and 1000 and the user should try dif
       <script src="js/profiles.js"></script>
       <script src="js/appTsne.js"></script>
       <script src="js/tray.js"></script>    
-      <h2>5. The desired low dimensions</h2>
+      <h2>6. The desired low dimensions</h2>
       <p>Although t-SNE results are affected by the user-defined parameters discussed above, there is still a condition that affects the results which is the desired low dimension. In this section, we provide an option for the users to upload their own data and find the difference between the results in 3D and 2D.
 		For some datasets we have used for testing, the clusters in 2D weren't clear depending on some parameters and number of samples while they were clear in 3D. One example can be that two clusters that are close to each other, can look as if they are the same cluster with different colors, but in 3D while moving the camera around, it can be shown that they are separated.</p>
 	<p>Having some results where 3D was better than 2D doesn't mean that 3D is always better. For some datasets, 3D was getting more error rates than 2D. The answer to which low dimension to choose is "it depends". Depending on the data and parameters chosen.</p><style>
@@ -1110,7 +1112,7 @@ Usually, epsilon is in the range between 10 and 1000 and the user should try dif
             }
 	</style>
 	<iframe src="../3dvs2d/index.html" scrolling="no"></iframe>
-	  <h2>6. Going from high dimension to low dimension, will it preserve the shape?</h2>
+	  <h2>7. Going from high dimension to low dimension, will it preserve the shape?</h2>
       <p>t-SNE is known that it preserve the local structure of the data, but that doesn't mean that you will get the same info. To test this, we provide below an option which will display the data in high dimension, in our case it's 3D, and next to it the output of inverting it to low dimension, 2D, using t-SNE. </p>
 	  <p>For some parameters, it was hard to guess what was the shape in the high dimension. The sphere wasn't presented by at least a circle which is close to the 2D projection of the sphere, also for the other shapes like torus and tetrahedron. User should try many parameters which can even reach perplexity value 1000 to get the closest shape in 2D.</p>
         <iframe src="../3dto2dtsne/index.html"  scrolling="no"></iframe>
